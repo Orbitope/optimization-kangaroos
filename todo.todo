@@ -1,0 +1,20 @@
+Writeup:
+  ☐ Initial summary of the background email thread/intro
+  Individual Sections:
+    ☐ Hill climber
+    ☐ Gradient ascent
+    ☐ Simulated annealing
+    ☐ Evolutionary/genetic algorithm
+
+optimizers.js:
+    ☐ Migrate functions to create javascript objects with x and y values rather than arrays
+
+    Hill Climber:
+      ☐ Step function to check repeated non-increasing values
+        ☐ Don't count out of bounds towards this.. 
+      ☐ Step function to set current state, status
+    
+    Gradient Ascent:
+      Extend hill climber but in finding neighbor, find derivative, scale back to normal
+      unit vector, then scale back up to step size
+      Need to decide of tol field refers to derivative or change in value

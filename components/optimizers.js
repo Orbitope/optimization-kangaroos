@@ -1,16 +1,16 @@
-import { Infinity, random, sin, cos, sqrt, pow, PI } from 'mathjs'
-import { eval_funcs } from './functions'
+import { random, sin, cos, sqrt, pow, PI } from 'mathjs'
+// import { eval_funcs } from './functions'
 
 /** Normalize any vector to unit length. */
 function unit_normalize(x, y) {
   const c = sqrt(pow(x, 2) + pow(y, 2));
-  return [x / c, y / c];
+  return {x: x / c, y: y / c};
 }
 
 /** Sample vector from unit circle. */
 function rand_unit_vector() {
   const a = random() * 2 * PI;
-  return [cos(a), sin(a)];
+  return {x: cos(a), y: sin(a)};
 }
 
 /** Scale a value on a 0-1 scale to the 
@@ -109,7 +109,7 @@ class HillClimber extends Optimizer {
      * @param {float} stepDecay The amount to reduce the stepSize parameter
      *      after each step. Stops optimization when stepSize <= 0.
      */
-    setState(evalFunc, maxSteps, tol, stepSize, stepDecay=0.0) {
+    setState(evalFunc, maxSteps, tol, stepSize, stepDecay=0.0, neighborAttempts=10) {
         this.evalFunc = evalFunc;
         this.maxSteps = maxSteps;
         this.tol = tol; // Change this to be based on domain of evalFunc?
@@ -118,7 +118,8 @@ class HillClimber extends Optimizer {
         this.stepSize = stepSize;
         this.stepDecay = stepDecay;
         this.value = this.evalFunc(this.state.x, this.state.y);
-        this.max_value = this.evalFunc(this.state);;
+        this.maxValue = this.evalFunc(this.state);
+        this.neighborAttempts = neighborAttempts;
     }
 
     /** Initialize the state randomly within the evalFunc bounds. */
@@ -130,29 +131,47 @@ class HillClimber extends Optimizer {
     }
 
     /** Step the optimization algorithm one iteration forwards.
-     * @returns {Float32Array} New set of location(s)
-     * @returns {float} New set of location evaluation function values
+     * @returns {Float32Array} New current location(s)
+     * @returns {float} New location evaluation function value
      * @returns {boolean} Indicator of whether the optimizer has converged or 
      *      has reached the maximum number of steps.
      */
     step() {
+        if (!this.complete) {
+          var attempts = 0;
+          var loc;
+          for (var i = 0; i < this.neighborAttempts; i++) {
+            loc = this.findNeighbor();
+            if (this.acceptNeighbor(loc)) {
+              break;
+            }
+          }
 
-        func_value = this.evalFunc(this.state);
-        return [this.state, func_value, this.complete];
+          if (attempts < (this.neighborAttempts - 1)) {
+            this.state = loc;
+            this.value = this.evalFunc(this.state);
+            if (this.value > this.maxValue) {
+              this.maxValue = this.value;
+            }
+          } else {
+            this.complete = true;
+          }
+        }
+
+        return [this.state, this.value, this.complete];
     }
 
     findNeighbor() {
-      var [x, y] = rand_unit_vector()
-      x *= this.stepSize;
-      y *= this.stepSize;
+      var [new_x, new_y] = rand_unit_vector()
+      new_x *= this.stepSize;
+      new_y *= this.stepSize;
       
-      return [x, y];
+      return {x: this.state.x + new_x, y: this.state.y + y};
     }
     
-    acceptNeighbor() {
-      const [x, y] = this.findNeighbor()
-      if (this.evalFunc.isInDomain(x, y)) {
-        if (this.evalFunc.getValue(x, y) >= this.value) {
+    acceptNeighbor(loc) {
+      if (this.evalFunc.isInDomain(loc.x, loc.y)) {
+        if (this.evalFunc.getValue(loc.x, loc.y) >= this.value) {
           return true;
         }
       }
