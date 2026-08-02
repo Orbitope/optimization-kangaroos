@@ -1,0 +1,23 @@
+{
+  "name": "@kangaroos/core",
+  "version": "0.1.0",
+  "description": "Optimization surfaces and algorithms for the Kangaroos article — pure TypeScript, no dependencies.",
+  "license": "MIT",
+  "author": "mwburke",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --experimental-strip-types --test test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
