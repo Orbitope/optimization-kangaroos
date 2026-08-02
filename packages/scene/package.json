@@ -1,0 +1,49 @@
+{
+  "name": "@kangaroos/scene",
+  "version": "0.1.0",
+  "description": "React Three Fiber components for the 3D kangaroo search view.",
+  "license": "MIT",
+  "author": "mwburke",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.build.json",
+    "build:demo": "vite build",
+    "test": "npm run build && node --experimental-strip-types --test test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "capture": "node scripts/capture.mjs"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": "^0.180.0"
+  },
+  "dependencies": {
+    "@contentkit/tokens": "file:../../../contentkit/web~/packages/tokens",
+    "@kangaroos/core": "file:../core"
+  },
+  "devDependencies": {
+    "@react-three/drei": "^10.0.0",
+    "@react-three/fiber": "^9.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.180.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": "^0.180.0",
+    "typescript": "^5.7.0",
+    "vite": "^7.0.0",
+    "playwright": "^1.56.0"
+  }
+}

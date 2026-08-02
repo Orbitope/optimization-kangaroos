@@ -115,6 +115,19 @@ export interface SceneTransformOptions {
   readonly heightRange?: { readonly min: number; readonly max: number }
   /** Grid resolution used to measure the altitude range. */
   readonly probeResolution?: number
+  /**
+   * Quantile used as the floor instead of the true minimum.
+   *
+   * Without this the deepest corner sets the scale and flattens everything
+   * worth looking at. Himmelblau bottoms out near -890 while its four maxima
+   * all sit at 0, so a true-minimum mapping gives the peaks 2.4% of the
+   * vertical range and the surface renders as one smooth dome.
+   *
+   * Clamping the bottom is also the honest reading of the metaphor: below a
+   * certain depth it is all ocean floor, and the kangaroo has drowned either
+   * way. Set to 0 for a literal minimum.
+   */
+  readonly heightFloorQuantile?: number
 }
 
 export interface SceneTransform {
@@ -150,7 +163,11 @@ export function createSceneTransform(
 ): SceneTransform {
   const verticalScale = options.verticalScale ?? 0.35
   const range =
-    options.heightRange ?? pick(sampleHeightGrid(surface, options.probeResolution ?? 128))
+    options.heightRange ??
+    measureRange(
+      sampleHeightGrid(surface, options.probeResolution ?? 128),
+      options.heightFloorQuantile ?? 0.05,
+    )
 
   const { xMin, xMax, yMin, yMax } = surface.domain
   const halfX = (xMax - xMin) / 2
@@ -162,7 +179,10 @@ export function createSceneTransform(
   const span = range.max - range.min
   const flat = !(span > 0)
 
-  const normalizeHeight = (h: number) => (flat ? 0.5 : (h - range.min) / span)
+  // Clamped, because the floor is a quantile: anything below it is drawn at
+  // the same depth rather than pushed out through the bottom of the world box.
+  const normalizeHeight = (h: number) =>
+    flat ? 0.5 : Math.min(1, Math.max(0, (h - range.min) / span))
   const toWorldY = (h: number) => normalizeHeight(h) * verticalScale
 
   return {
@@ -198,6 +218,14 @@ export function createSceneTransform(
   }
 }
 
-function pick(grid: HeightGrid): { min: number; max: number } {
-  return { min: grid.min, max: grid.max }
+/** Altitude range with its floor pulled up to a quantile of the samples. */
+function measureRange(grid: HeightGrid, floorQuantile: number): { min: number; max: number } {
+  if (!(floorQuantile > 0)) return { min: grid.min, max: grid.max }
+
+  const finite = Array.from(grid.heights).filter(Number.isFinite)
+  finite.sort((a, b) => a - b)
+  const floor = finite[Math.floor(Math.min(1, floorQuantile) * (finite.length - 1))] ?? grid.min
+
+  // A floor at or above the summit would collapse the range entirely.
+  return { min: floor < grid.max ? floor : grid.min, max: grid.max }
 }

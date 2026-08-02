@@ -1,20 +1,15 @@
 {
   "name": "optimization-kangaroos",
+  "private": true,
   "version": "1.0.0",
   "license": "MIT",
-  "idyll": {
-    "theme": "default",
-    "layout": "centered",
-    "css": "styles.css",
-    "authorView": false
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev": "npm run dev --workspace @kangaroos/scene"
   },
-  "dependencies": {
-    "d3": "^4.0.0",
-    "idyll": "^4.0.0",
-    "idyll-d3-component": "^2.0.0",
-    "mathjs": "^6.0.2"
-  },
-  "devDependencies": {
-    "gh-pages": "^0.12.0"
-  }
+  "engines": { "node": ">=22.6" }
 }

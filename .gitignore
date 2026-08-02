@@ -66,3 +66,4 @@ components/custom-d3-component.js
 # Build output
 dist/
 *.tsbuildinfo
+shots/
