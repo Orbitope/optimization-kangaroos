@@ -35,6 +35,20 @@ export interface Individual {
   readonly value: number
 }
 
+/**
+ * A candidate the optimizer looked at on this step.
+ *
+ * Recording the rejected ones matters for the 3D view: the hill climber trying
+ * a dozen directions before one sticks, and annealing knowingly taking a
+ * downhill move, are the two clearest teaching moments in the piece, and
+ * neither is visible from the accepted trajectory alone.
+ */
+export interface Proposal extends Individual {
+  readonly accepted: boolean
+  /** Present for annealing: the Metropolis probability this was taken with. */
+  readonly acceptProbability?: number
+}
+
 export interface OptimizerState {
   readonly step: number
   /** Where the kangaroo is now. */
@@ -46,6 +60,8 @@ export interface OptimizerState {
   readonly termination: Termination
   /** Present for population methods. */
   readonly population?: readonly Individual[]
+  /** Candidates evaluated this step. Only populated when `recordProposals`. */
+  readonly proposals?: readonly Proposal[]
   /** Algorithm-specific readouts — temperature, step size, generation. */
   readonly meta: Readonly<Record<string, number>>
 }
@@ -54,6 +70,14 @@ export interface BaseOptions {
   readonly maxSteps?: number
   /** Optional fixed start. Omit to parachute the kangaroo in at random. */
   readonly start?: Vec2
+  /**
+   * Record every candidate considered, not just the accepted one.
+   *
+   * Off by default. A single run costs almost nothing, but `runEnsemble` over
+   * a hundred seeds would allocate hundreds of thousands of objects it never
+   * looks at.
+   */
+  readonly recordProposals?: boolean
 }
 
 function randomStart(surface: Surface, rng: Rng): Vec2 {
@@ -101,9 +125,12 @@ export function* hillClimber(
   const patience = opts.patience ?? 3
   let stepSize = opts.stepSize ?? domainDiagonal(surface.domain) * 0.02
 
+  const record = opts.recordProposals ?? false
+
   let current = at(surface, opts.start ?? randomStart(surface, rng))
   let best = current
   let stalledFor = 0
+  let proposals: Proposal[] = []
 
   const emit = (step: number, done: boolean, termination: Termination): OptimizerState => ({
     step,
@@ -112,7 +139,8 @@ export function* hillClimber(
     best,
     done,
     termination,
-    meta: { stepSize, stalledFor },
+    ...(record ? { proposals } : {}),
+    meta: { stepSize, stalledFor, tried: proposals.length },
   })
 
   if (maxSteps < 1) return emit(0, true, 'max-steps')
@@ -121,6 +149,7 @@ export function* hillClimber(
   for (let step = 1; step <= maxSteps; step++) {
     let moved = false
     let sawInBounds = false
+    proposals = []
 
     for (let i = 0; i < attempts; i++) {
       const dir = randUnitVector(rng)
@@ -129,7 +158,10 @@ export function* hillClimber(
 
       sawInBounds = true
       const probe = at(surface, candidate)
-      if (probe.value >= current.value) {
+      const accepted = probe.value >= current.value
+      if (record) proposals.push({ ...probe, accepted })
+
+      if (accepted) {
         current = probe
         best = better(best, probe)
         moved = true
@@ -291,6 +323,9 @@ export function* simulatedAnnealing(
   let best = current
   let temperature = opts.temperature ?? estimateVerticalScale(surface, rng)
   let accepted = 0
+  let proposals: Proposal[] = []
+
+  const record = opts.recordProposals ?? false
 
   const emit = (step: number, done: boolean, termination: Termination): OptimizerState => ({
     step,
@@ -299,6 +334,7 @@ export function* simulatedAnnealing(
     best,
     done,
     termination,
+    ...(record ? { proposals } : {}),
     meta: { temperature, accepted, acceptRate: step === 0 ? 0 : accepted / step },
   })
 
@@ -315,7 +351,12 @@ export function* simulatedAnnealing(
     const delta = probe.value - current.value
 
     // Uphill is always taken; downhill depends on how drunk she still is.
-    if (delta >= 0 || rng.next() < Math.exp(delta / temperature)) {
+    const chance = delta >= 0 ? 1 : Math.exp(delta / temperature)
+    const take = delta >= 0 || rng.next() < chance
+
+    if (record) proposals = [{ ...probe, accepted: take, acceptProbability: chance }]
+
+    if (take) {
       current = probe
       best = better(best, probe)
       accepted++
