@@ -1,0 +1,516 @@
+---
+layout: ../layouts/Article.astro
+title: "Kangaroos and Training Neural Networks"
+description: "How machine learning actually finds an answer, explained with a kangaroo, a mountain range, and a 1993 Usenet thread."
+---
+
+import { SearchFigure } from '../components/SearchFigure.tsx'
+import { EnsembleFigure } from '../components/EnsembleFigure.tsx'
+
+<div class="prose masthead">
+
+<p class="kicker">Optimization, explained badly on purpose</p>
+
+# Kangaroos and Training Neural Networks
+
+<p class="standfirst">
+In 1993 a statistician tried to explain how machine learning finds an answer,
+and reached for a kangaroo. Three decades later it is still the best
+explanation anyone has written. Here it is, with the mountains rendered.
+</p>
+
+</div>
+
+<div class="prose">
+
+Somewhere in a machine learning system there are numbers that can be turned,
+like dials. Nobody sets them by hand. The machine finds them by trying
+something, seeing how wrong it was, adjusting, and trying again — a few million
+times.
+
+That process has a name, *numerical optimization*, and a reputation for being
+impenetrable. It is not. It is a kangaroo looking for a mountain.
+
+<blockquote>
+Training a NN is a form of numerical optimization, which can be likened to a
+kangaroo searching for the top of Mt. Everest. Everest is the *global optimum*,
+the highest mountain in the world, but the top of any other really tall
+mountain such as K2 (a good *local optimum*) would be satisfactory. On the
+other hand, the top of a small hill like Chapel Hill, NC, (a bad local optimum)
+would not be acceptable.
+<cite>Warren S. Sarle, comp.ai.neural-nets, 1993</cite>
+</blockquote>
+
+## The map
+
+Two things need translating before the kangaroo can start.
+
+**The compass is the dials.** North–south is one number the machine can turn;
+east–west is another. Every position on the map is one particular setting of
+those two dials.
+
+**Altitude is how well it is doing.** High ground is a good answer, low ground
+is a bad one. Sarle put it the other way round — machine learning people
+measure *error*, so they talk about descending into valleys — but multiply by
+minus one and it is the same landscape. Uphill is better. That is all you need.
+
+Two dials, of course, is a lie of convenience. A real system has millions, and
+the landscape has millions of directions rather than four. Nobody can picture
+that, including the people who work on it every day, and the two-dial version
+is what they picture instead.
+
+<div class="wide">
+<SearchFigure
+  client:visible
+  surface="Himmelblau"
+  algorithm="hill-climber"
+  seed={3}
+  showProbes
+  caption="A kangaroo on a landscape. She cannot see it — the view is ours, not hers. Drag to orbit."
+/>
+</div>
+
+Now the hard part, which is the part everyone skips.
+
+<blockquote>
+Initial weights are usually chosen randomly, which means that the kangaroo is
+dropped by parachute somewhere over Asia by a pilot who has lost the map.
+<cite>Sarle</cite>
+</blockquote>
+
+She does not get to pick where she starts. She does not know where Everest is —
+if anybody knew, there would be no need to search. And she cannot see the
+landscape you are looking at. She can only feel the ground under her feet.
+
+Everything that follows is a different answer to one question: **given that,
+which way should she jump?**
+
+</div>
+
+<div class="prose">
+
+## Act one: feeling around
+
+The simplest possible answer. Jump somewhere nearby at random. If the new spot
+is higher, stay. If it is lower, go back and try a different direction.
+
+That is a *hill climber*, and it works, in the narrow sense that it always ends
+up somewhere higher than it started.
+
+<div class="wide">
+<SearchFigure
+  client:visible
+  surface="Himmelblau"
+  algorithm="hill-climber"
+  seed={7}
+  showProbes
+  caption="Faint lines are directions she tried and rejected — downhill, so she stayed put. The bright arc is a jump she kept."
+/>
+</div>
+
+Watch the rejected attempts. Most jumps are wasted. She is not being clever;
+she is being persistent, and near the top she spends most of her effort
+discovering that everything around her is lower.
+
+There is an obvious improvement available: stop guessing which way is up, and
+measure it.
+
+### The bowling ball
+
+This is the bit that usually gets replaced with a paragraph of calculus. In the
+same thread, Lutz Prechelt refused to do that, and explained it with sports
+equipment instead. He starts by naming the gap:
+
+<blockquote>
+The analogy only explains WHAT the algorithm does, but not HOW it does the most
+intricate part: chosing the direction of the next jump.
+<cite>Lutz Prechelt, comp.ai.neural-nets, 1993</cite>
+</blockquote>
+
+Then he closes it. The kangaroo digs two trenches at her feet — one running
+north–south, one running east–west — and lines them with steel, and then
+teflon, so that they are perfectly smooth and frictionless. She takes a bowling
+ball out of her pouch, drops it into the north–south trench, and watches which
+way it rolls, and how far.
+
+Then she does the east–west trench.
+
+Say the ball rolls **8 cm north** and **14 cm east**. Now she multiplies. A
+kangaroo using a *learning rate* of 50 jumps to a point **4 metres north and
+7 metres east** of where she was standing.
+
+That is the whole of it. The two trenches are the two dials, tested one at a
+time. How far the ball rolls is how steeply the ground falls away in that
+direction. And the learning rate is a multiplier — 8 cm becomes 4 m because
+8 × 50 = 400.
+
+<blockquote>
+It is not important for the algorithm whether the kangaroo uses the same
+bowling ball over and over again, or throws it away after each measurement and
+picks a new one from its pouch next time. This is because in the
+backpropagation world, bowling balls bio-degrade in zero time.
+<cite>Prechelt</cite>
+</blockquote>
+
+<div class="wide">
+<SearchFigure
+  client:visible
+  surface="Schwefel"
+  algorithm="gradient-ascent"
+  seed={2}
+  showGradients
+  caption="Arrows show which way the ball would roll, everywhere at once. She only ever measures the one she is standing on."
+/>
+</div>
+
+Every arrow in that figure is a pair of trenches she never dug. The whole field
+is visible to us and invisible to her; she gets one reading, at her own feet,
+and has to commit.
+
+</div>
+
+<div class="prose">
+
+## Act two: how far to jump
+
+The learning rate looked like a footnote. It is not. It is the single number
+most likely to be wrong, and Sarle spends more of the thread on its failures
+than on any other topic.
+
+The trouble is what the multiplier is applied *to*. Roll distance depends on
+steepness, so the jump does too:
+
+<blockquote>
+A major problem with standard backprop is that the distance the kangaroo hops
+is related to the steepness of the terrain. If the kangaroo starts on a gently
+sloping plain instead of a mountain side, she will take very small hops and
+make very slow progress. When she finally starts to ascend a mountain, her hops
+get longer and more dangerous, and she may hop off the mountain altogether.
+<cite>Sarle</cite>
+</blockquote>
+
+Three failures in one paragraph, and they pull in opposite directions.
+
+<div class="wide">
+<SearchFigure
+  client:visible
+  surface="Himmelblau"
+  algorithm="gradient-ascent-raw"
+  rate={0.0006}
+  seed={4}
+  height={360}
+  caption="Rate too low. Every jump is correct and almost nothing happens."
+/>
+
+<SearchFigure
+  client:visible
+  surface="Himmelblau"
+  algorithm="gradient-ascent-raw"
+  rate={0.02}
+  seed={4}
+  height={360}
+  caption="Rate too high. The first jump crosses half the map, and from there she is somewhere she never intended to be."
+/>
+</div>
+
+Too small and she is correct and useless. Too large and the first jump from
+steep ground throws her clean across the map — she has not made a mistake about
+*direction*, only about how much to trust it.
+
+And there is a third failure that only shows up at the end:
+
+<blockquote>
+If the kangaroo ever gets near the peak, she may jump back and forth across the
+peak without ever landing on it. If you use a decaying step size, the kangaroo
+gets tired and makes smaller and smaller hops, so if she ever gets near the
+peak she has a better chance of actually landing on it before the Himalayas
+erode away.
+<cite>Sarle</cite>
+</blockquote>
+
+A jump sized for crossing a plain is far too big for a summit. The fix is to
+get tired on purpose: shrink the jump as you go. Modern systems all do some
+version of this, and call it a learning rate schedule.
+
+<div class="wide">
+<SearchFigure
+  client:visible
+  surface="Himmelblau"
+  algorithm="gradient-ascent"
+  stepDecay={0.985}
+  seed={4}
+  caption="A decaying rate. Long strides while there is ground to cover, short ones once there is not."
+/>
+</div>
+
+</div>
+
+<div class="prose">
+
+## Act three: getting unstuck
+
+Everything so far shares one flaw, and it is fatal.
+
+Every method above only ever goes uphill. Which means every one of them stops
+at the top of whatever hill it happened to land on. Not Everest — *the nearest
+hill*. If the parachute dropped her on Chapel Hill, she climbs Chapel Hill,
+plants a flag, and reports success.
+
+This is not a rare edge case. It is the normal outcome.
+
+<div class="wide">
+<EnsembleFigure
+  client:visible
+  surface="Schwefel"
+  algorithms={['hill climber', 'gradient ascent']}
+  seeds={30}
+  chart="success"
+  caption="Thirty runs each on a landscape with one true summit and many decoys. Reaching the highest point is the exception."
+/>
+</div>
+
+So the rest of the thread is about kangaroos willing to do something that looks,
+locally, like a mistake.
+
+### Get drunk
+
+<blockquote>
+In simulated annealing, the kangaroo is drunk and hops around randomly for a
+long time. However, she gradually sobers up and the more sober she is, the more
+likely she is to hop up hill.
+<cite>Sarle</cite>
+</blockquote>
+
+Early on she will go downhill happily, which means she can leave a hill she has
+already climbed and find a better one. As she sobers, downhill jumps get rarer,
+until eventually she only goes up and settles wherever she is.
+
+The name comes from metalworking — heat a metal and cool it slowly and the
+atoms settle into a better arrangement than if you had quenched it. The
+kangaroo version is more memorable and means the same thing.
+
+<div class="wide">
+<SearchFigure
+  client:visible
+  surface="Eggholder"
+  algorithm="annealing"
+  seed={5}
+  framesPerStep={3}
+  caption="Wild early, focused late. Watch her abandon perfectly good summits in the first few seconds."
+/>
+</div>
+
+### Send more kangaroos
+
+If one kangaroo lands somewhere unpromising, land a hundred.
+
+<blockquote>
+A genetic algorithm begins like random multistart. However, these kangaroos do
+not know that they are supposed to be looking for the top of a mountain. Every
+few years, you shoot the kangaroos at low altitudes and hope the ones that are
+left will be fruitful, multiply, and ascend.
+<cite>Sarle</cite>
+</blockquote>
+
+Which is, allowing for the phrasing, an accurate description of a genetic
+algorithm. Scatter a population, cull the low ones, breed the survivors,
+repeat.
+
+<div class="wide">
+<SearchFigure
+  client:visible
+  surface="Ackley"
+  algorithm="genetic"
+  seed={1}
+  framesPerStep={9}
+  caption="A population on a landscape that is almost flat except for one spike. A single kangaroo would wander it forever."
+/>
+</div>
+
+Sarle then undercuts his own animal:
+
+<blockquote>
+Current research suggests that fleas may be more effective than kangaroos in
+genetic algorithms, since their faster rate of reproduction more than
+compensates for their shorter hops.
+<cite>Sarle</cite>
+</blockquote>
+
+</div>
+
+<div class="prose">
+
+## Act four: where the mountains came from
+
+Everything so far has assumed the landscape is simply *there* — a fixed thing
+the kangaroo is exploring badly. Prechelt points out, most of the way down the
+thread, that this is completely false, and it is the most important sentence in
+it:
+
+<blockquote>
+Why does the Himalaya look just like it does? The answer is: it doesn't. The
+mountains in which the kangaroo jumps around are `induced' by your training
+data. Each example suggests certain hills or mountains at certain points on the
+surface of the (otherwise absolutely flat) earth.
+<cite>Prechelt</cite>
+</blockquote>
+
+The ground is not scenery. It is *built out of the examples you showed the
+machine*. Start with a flat plain; every training example raises a hill where
+it falls; the landscape is what you get when they all pile up.
+
+Ten examples give you ten lumps. A thousand overlap into something that looks
+like real terrain.
+
+<div class="wide">
+<SearchFigure
+  client:visible
+  surface="data:12"
+  algorithm="gradient-ascent"
+  stepDecay={0.985}
+  seed={6}
+  dataSeed={3}
+  caption="A landscape built from twelve examples. She climbs it, because it is the only ground there is."
+/>
+</div>
+
+Here is the part that should worry you.
+
+Draw a *different* twelve examples — same machine, same process, just a
+different handful of data — and rebuild. The big mountains stay roughly where
+they were. The small hills move somewhere else entirely.
+
+<div class="wide">
+<SearchFigure
+  client:visible
+  surface="data:12"
+  algorithm="gradient-ascent"
+  stepDecay={0.985}
+  seed={6}
+  dataSeed={11}
+  caption="The same everything, with a different twelve examples. Compare the foothills to the figure above."
+/>
+</div>
+
+Which tells you something the kangaroo cannot know: **the big mountains are
+real and the small hills are an accident of which examples you happened to
+get.** Under her feet they feel identical. Both are solid ground, both slope
+upward, and she has no way at all to tell them apart.
+
+So when she summits a small hill and plants her flag, she has climbed something
+that exists only because of the particular examples she was trained on. Show
+the machine different data and the mountain is not there. She is standing on a
+plain, at no particular height, having climbed nothing.
+
+That is what **overfitting** is. Not a subtle statistical failure — a kangaroo
+triumphant on top of a hill that was never there.
+
+And it is why anyone serious keeps some data back. A landscape built from
+examples the machine never trained on is the only way to ask whether the
+mountain was real.
+
+<div class="wide">
+<SearchFigure
+  client:visible
+  surface="data:400"
+  algorithm="gradient-ascent"
+  stepDecay={0.985}
+  seed={6}
+  dataSeed={3}
+  caption="Four hundred examples. The phantom foothills are gone; what remains is in the same place no matter which sample you draw."
+/>
+</div>
+
+More data, fewer imaginary mountains. Which is the entire reason the industry
+is so hungry for it.
+
+### Standing on ground that keeps moving
+
+One more consequence, and it explains something that otherwise looks insane.
+
+Real systems do not build the whole landscape before setting off. They show the
+machine a handful of examples, take one step on the landscape *those* examples
+build, then throw it away and draw a fresh handful.
+
+Sarle saw it coming:
+
+<blockquote>
+With on-line training, there are frequent earthquakes, and mountains constantly
+appear and disappear. This makes it difficult for the blind kangaroo to tell
+whether she has ever reached the top of a mountain, and she has to take small
+hops to avoid falling into the gaping chasms that can open up at any moment.
+<cite>Sarle</cite>
+</blockquote>
+
+It sounds like a disaster and it is how essentially everything is trained. No
+single handful is right, but the errors point in different directions and
+mostly cancel; the pull toward the real mountains is the one thing every
+handful agrees on. It is also why very large steps and very small batches are a
+bad combination — you are taking a confident stride on ground that is about to
+be demolished.
+
+</div>
+
+<div class="prose">
+
+## What actually works
+
+Prechelt ends with a ranking. After a full page of algorithms, he lists the
+best ways to find Mount Everest:
+
+<blockquote>
+
+1. to know where it is
+2. to have a map on which you can find it
+3. to know someone who knows where it is or who has a map
+4. to send a kangaroo to search for it
+
+<cite>Prechelt</cite>
+</blockquote>
+
+Every method in this article is number four. Dead last, behind asking a friend.
+
+It is a joke, and it is also the practical summary of the last decade of the
+field. Nobody starts from a random parachute drop any more if they can avoid
+it. They start from a model somebody else already trained — someone else's map,
+which is number two, or number three if you count downloading it.
+
+Searching is what you do when you have nothing better. It works. It is just not
+the first thing to reach for.
+
+And then, a few messages later, someone from Melbourne read the whole thread
+and replied with one line:
+
+<blockquote>
+Presumably, this is why Australia is so flat.
+<cite>Jonathan O'Donnell, RMIT, 1993</cite>
+</blockquote>
+
+</div>
+
+<div class="prose colophon">
+
+## Credit
+
+This article is a rendering of someone else's writing. The thread is
+*Kangaroos and Training Neural Networks*, posted to comp.ai.neural-nets in
+September 1993 and revised by Warren S. Sarle in October 1994. Every quotation
+above is verbatim.
+
+- **Warren S. Sarle** (SAS Institute) — the original post and the taxonomy of
+  methods.
+- **Lutz Prechelt** (University of Karlsruhe) — the teflon trenches and the
+  bowling ball, the landscape induced by training data, and the ranking.
+- **Jonathan O'Donnell** (RMIT) — Australia.
+- **Scott E. Fahlman** (Carnegie Mellon) — a reply on cascade-correlation, in
+  which excess kangaroos find their way to army bases and attack the generals,
+  leaving the army with poor generalization. It did not fit here. It is worth
+  reading anyway.
+- The description of conjugate gradient methods is adapted from **Tony Plate**
+  (1993).
+
+The jokes are theirs. The mountains are simulated, the algorithms are real
+implementations rather than animations, and every figure runs live in your
+browser from a fixed random seed.
+
+</div>

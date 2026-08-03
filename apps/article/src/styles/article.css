@@ -1,0 +1,153 @@
+@import '@contentkit/tokens/tokens.css';
+
+/* ── page ───────────────────────────────────────────────────────────────── */
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--ck-void);
+  color: var(--ck-text-primary);
+  font-family: var(--ck-font-body);
+  font-size: var(--ck-text-lg);
+  line-height: var(--ck-leading-relaxed);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Prose is a readable measure; figures break out wider. */
+.prose { max-width: 34rem; margin: 0 auto; padding: 0 var(--ck-space-5); }
+
+/*
+ * Figures live inside the prose column in the MDX, so they need to escape it.
+ * Centring on 50% of the parent and pulling back by half the element's own
+ * width lands them centred on the page without restructuring the document —
+ * the alternative is closing and reopening the prose wrapper around every
+ * figure, which makes the source unreadable.
+ */
+.wide {
+  width: min(60rem, calc(100vw - 3rem));
+  margin: var(--ck-space-8) 0 var(--ck-space-8) 50%;
+  transform: translateX(-50%);
+}
+
+h1, h2, h3 {
+  font-family: var(--ck-font-display);
+  color: var(--ck-text-bright);
+  line-height: var(--ck-leading-tight);
+  letter-spacing: var(--ck-tracking-tight);
+}
+h1 { font-size: var(--ck-text-4xl); margin: 0 0 var(--ck-space-4); }
+h2 { font-size: var(--ck-text-2xl); margin: var(--ck-space-9) 0 var(--ck-space-4); }
+h3 { font-size: var(--ck-text-xl); margin: var(--ck-space-7) 0 var(--ck-space-3); }
+p  { margin: 0 0 var(--ck-space-5); }
+a  { color: var(--ck-amber-bright); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+strong { color: var(--ck-text-bright); font-weight: var(--ck-weight-semibold); }
+em { color: var(--ck-text-bright); font-style: italic; }
+
+/* ── the 1993 thread, quoted ────────────────────────────────────────────── */
+
+blockquote {
+  margin: var(--ck-space-6) 0;
+  padding: var(--ck-space-4) var(--ck-space-5);
+  border-left: 2px solid var(--ck-amber);
+  background: var(--ck-surface);
+  color: var(--ck-text-bright);
+  font-size: var(--ck-text-base);
+}
+blockquote p:last-child { margin-bottom: 0; }
+blockquote cite {
+  display: block;
+  margin-top: var(--ck-space-3);
+  font-style: normal;
+  font-size: var(--ck-text-xs);
+  color: var(--ck-text-muted);
+  letter-spacing: var(--ck-tracking-wide);
+  text-transform: uppercase;
+}
+
+/* Verbatim Usenet: fixed-width, because it was written that way. */
+pre {
+  overflow-x: auto;
+  padding: var(--ck-space-4);
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-base);
+  font-family: var(--ck-font-mono);
+  font-size: var(--ck-text-xs);
+  line-height: var(--ck-leading-snug);
+  color: var(--ck-text-secondary);
+}
+code { font-family: var(--ck-font-mono); font-size: 0.9em; color: var(--ck-amber-bright); }
+pre code { color: inherit; }
+
+/* ── figures ────────────────────────────────────────────────────────────── */
+
+.figure { margin: var(--ck-space-7) 0; }
+.figure-scene { margin: var(--ck-space-8) 0; }
+.scene-shell {
+  background: var(--ck-void);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-lg);
+  overflow: hidden;
+}
+.scene-shell canvas { display: block; touch-action: pan-y; }
+.figure-caption {
+  margin-top: var(--ck-space-3);
+  font-size: var(--ck-text-sm);
+  line-height: var(--ck-leading-snug);
+  color: var(--ck-text-muted);
+}
+
+.ck-chart-title {
+  font-family: var(--ck-font-display);
+  color: var(--ck-text-bright);
+  font-size: var(--ck-text-base);
+  margin-bottom: var(--ck-space-3);
+}
+.ck-chart-legend {
+  display: flex; flex-wrap: wrap; gap: var(--ck-space-4);
+  list-style: none; margin: var(--ck-space-3) 0 0; padding: 0;
+  font-size: var(--ck-text-xs); color: var(--ck-text-secondary);
+}
+.ck-chart-legend li { display: flex; align-items: center; gap: var(--ck-space-2); }
+.ck-chart-swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.ck-visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+
+/* ── masthead & colophon ────────────────────────────────────────────────── */
+
+/* Block only: the shorthand would drop .prose's horizontal padding. */
+.masthead { padding-top: var(--ck-space-9); padding-bottom: var(--ck-space-7); }
+.kicker {
+  font-family: var(--ck-font-mono);
+  font-size: var(--ck-text-xs);
+  letter-spacing: var(--ck-tracking-caps);
+  text-transform: uppercase;
+  color: var(--ck-amber);
+  margin-bottom: var(--ck-space-4);
+}
+.standfirst { font-size: var(--ck-text-xl); color: var(--ck-text-secondary); }
+
+.colophon {
+  margin-top: var(--ck-space-10);
+  padding: var(--ck-space-7) 0 var(--ck-space-9);
+  border-top: 1px solid var(--ck-border);
+  font-size: var(--ck-text-sm);
+  color: var(--ck-text-muted);
+}
+.colophon h2 { font-size: var(--ck-text-lg); margin-top: 0; }
+
+@media (max-width: 640px) {
+  body { font-size: var(--ck-text-base); }
+  h1 { font-size: var(--ck-text-3xl); }
+  .wide { width: 100vw; }
+  .scene-shell { border-radius: 0; border-left: none; border-right: none; }
+}
+
+/* Someone who has asked for less motion should not get a looping animation. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}

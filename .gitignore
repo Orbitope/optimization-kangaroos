@@ -68,3 +68,5 @@ dist/
 *.tsbuildinfo
 shots/
 packages/scene/*.mjs
+apps/article/dist/
+apps/article/.astro/

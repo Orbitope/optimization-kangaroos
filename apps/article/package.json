@@ -1,0 +1,31 @@
+{
+  "name": "@kangaroos/article",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1",
+    "build": "astro build",
+    "preview": "astro preview --host 127.0.0.1",
+    "typecheck": "astro check --minimumSeverity error"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4.0.0",
+    "@astrojs/react": "^4.0.0",
+    "@contentkit/tokens": "file:../../../contentkit/web~/packages/tokens",
+    "@kangaroos/charts": "file:../../packages/charts",
+    "@kangaroos/core": "file:../../packages/core",
+    "@kangaroos/scene": "file:../../packages/scene",
+    "@react-three/drei": "^10.0.0",
+    "@react-three/fiber": "^9.0.0",
+    "astro": "^5.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/three": "^0.180.0",
+    "typescript": "^5.7.0"
+  }
+}
