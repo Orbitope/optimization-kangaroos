@@ -1,0 +1,46 @@
+name: CI
+
+# Deliberately not `on: push`. Every commit here is one of a long series while
+# a figure gets iterated on, and running the full matrix for each of them burns
+# minutes to tell us something we already know from running the suites locally.
+# This fires when a change is actually up for review, or on request.
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # Both repos, as siblings. @contentkit/tokens is consumed by relative
+      # path rather than from a registry, so the layout is load-bearing —
+      # tools/check-sibling.mjs enforces it locally and this reproduces it here.
+      - uses: actions/checkout@v4
+        with:
+          path: optimization-kangaroos
+
+      - uses: actions/checkout@v4
+        with:
+          repository: Orbitope/contentkit
+          ref: claude/email-tool-article-video-8bba08
+          path: contentkit
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build and test @contentkit/tokens
+        working-directory: contentkit/web~/packages/tokens
+        run: npm install --no-audit --no-fund && npm test
+
+      - name: Install optimization-kangaroos
+        working-directory: optimization-kangaroos
+        run: npm install --no-audit --no-fund
+
+      - name: Test all workspaces
+        working-directory: optimization-kangaroos
+        run: npm test --workspaces --if-present
+
+      - name: Typecheck
+        working-directory: optimization-kangaroos
+        run: npm run typecheck --workspaces --if-present

@@ -4,6 +4,7 @@ import {
   collect,
   createSampledSurface,
   createTrueSurface,
+  runEnsemble,
   geneticAlgorithm,
   gradientAscent,
   hillClimber,
@@ -12,6 +13,7 @@ import {
   type OptimizerState,
   type Surface,
 } from '@kangaroos/core'
+import { BasinChart, ConvergenceChart, SuccessChart } from '@kangaroos/charts'
 import { DataShiftMax, SearchScene, useRunView } from '@kangaroos/scene'
 import { Canvas } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -46,6 +48,7 @@ export function App() {
   const [showProbes, setShowProbes] = useState(true)
   const [wireframe, setWireframe] = useState(false)
   const [frame, setFrame] = useState(0)
+  const [showCharts, setShowCharts] = useState(false)
 
   const surface = useMemo(() => {
     if (surfaceName === DATA) return createSampledSurface({ count: exampleCount, seed: dataSeed })
@@ -59,6 +62,20 @@ export function App() {
     [algorithm, surface, seed],
   )
   const view = useRunView(surface, states)
+
+  // Ensembles are pure computation over the core and take a moment; only build
+  // them when the panel is actually open.
+  const ensembles = useMemo(
+    () =>
+      showCharts
+        ? [
+            { label: 'hill climber', ensemble: runEnsemble(surface, (s, rng) => hillClimber(s, rng), { seedCount: 24 }) },
+            { label: 'gradient ascent', ensemble: runEnsemble(surface, (s, rng) => gradientAscent(s, rng, { stepDecay: 0.99 }), { seedCount: 24 }) },
+            { label: 'annealing', ensemble: runEnsemble(surface, (s, rng) => simulatedAnnealing(s, rng), { seedCount: 24 }) },
+          ]
+        : [],
+    [surface, showCharts],
+  )
 
   useEffect(() => setFrame(0), [states])
 
@@ -225,6 +242,14 @@ export function App() {
           />
           Wireframe
         </label>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={showCharts}
+            onChange={(e) => setShowCharts(e.target.checked)}
+          />
+          Charts
+        </label>
 
         <dl className="readout">
           <dt>altitude</dt>
@@ -243,6 +268,21 @@ export function App() {
       </aside>
 
       <main className="stage">
+        {showCharts && (
+          <div className="charts">
+            <ConvergenceChart
+              title="Best altitude so far"
+              series={ensembles}
+              height={230}
+            />
+            <SuccessChart title="Reached the global optimum" results={ensembles} />
+            <BasinChart
+              title={`Which summit, on ${surface.name}`}
+              ensemble={ensembles[0]!.ensemble}
+              radius={(surface.domain.xMax - surface.domain.xMin) * 0.05}
+            />
+          </div>
+        )}
         <Canvas shadows camera={{ position: [1.8, 1.5, 1.8], fov: 42 }}>
           <SearchScene
             surface={surface}

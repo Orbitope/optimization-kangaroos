@@ -30,7 +30,8 @@
   },
   "dependencies": {
     "@contentkit/tokens": "file:../../../contentkit/web~/packages/tokens",
-    "@kangaroos/core": "file:../core"
+    "@kangaroos/core": "file:../core",
+    "@kangaroos/charts": "file:../charts"
   },
   "devDependencies": {
     "@react-three/drei": "^10.0.0",

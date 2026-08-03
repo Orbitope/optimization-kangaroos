@@ -4,12 +4,18 @@
   "version": "1.0.0",
   "license": "MIT",
   "type": "module",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "dev": "npm run dev --workspace @kangaroos/scene"
+    "dev": "npm run dev --workspace @kangaroos/scene",
+    "preinstall": "node tools/check-sibling.mjs",
+    "check:layout": "node tools/check-sibling.mjs"
   },
-  "engines": { "node": ">=22.6" }
+  "engines": {
+    "node": ">=22.6"
+  }
 }

@@ -63,3 +63,38 @@ dd { margin: 0; color: var(--ck-text-bright); text-align: right; }
 
 .stage { position: relative; }
 canvas { display: block; }
+
+.charts {
+  position: absolute;
+  inset: 0;
+  /* The Canvas is a later sibling, so without this it paints over the panel. */
+  z-index: 1;
+  overflow-y: auto;
+  background: var(--ck-void);
+  padding: var(--ck-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-7);
+}
+.ck-chart-title {
+  font-family: var(--ck-font-display);
+  color: var(--ck-text-bright);
+  font-size: var(--ck-text-base);
+  margin-bottom: var(--ck-space-3);
+}
+.ck-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ck-space-4);
+  list-style: none;
+  margin: var(--ck-space-3) 0 0;
+  padding: 0;
+  font-size: var(--ck-text-xs);
+  color: var(--ck-text-secondary);
+}
+.ck-chart-legend li { display: flex; align-items: center; gap: var(--ck-space-2); }
+.ck-chart-swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.ck-visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}

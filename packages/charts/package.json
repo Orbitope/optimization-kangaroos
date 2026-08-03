@@ -1,0 +1,25 @@
+{
+  "name": "@kangaroos/charts",
+  "version": "0.1.0",
+  "description": "Cross-run analytics charts for the Kangaroos article.",
+  "license": "MIT",
+  "author": "mwburke",
+  "type": "module",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "npm run build && node --experimental-strip-types --test test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": { "react": "^19.0.0" },
+  "dependencies": {
+    "@contentkit/tokens": "file:../../../contentkit/web~/packages/tokens",
+    "@kangaroos/core": "file:../core"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}
