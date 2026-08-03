@@ -11,13 +11,13 @@
   "scripts": {
     "build:tokens": "npm --prefix ../contentkit/web~/packages/tokens run build",
     "build:libs": "npm run build:tokens && npm run build -w @kangaroos/core -w @kangaroos/charts -w @kangaroos/scene",
-    "build": "npm run build:libs && npm run build -w @kangaroos/article",
+    "build": "npm run build -w @kangaroos/article",
     "test": "npm run build:libs && npm run test --workspaces --if-present",
     "typecheck": "npm run build:libs && npm run typecheck --workspaces --if-present",
-    "dev": "npm run build:libs && npm run dev -w @kangaroos/scene",
+    "dev": "npm run dev -w @kangaroos/scene",
     "preinstall": "node tools/check-sibling.mjs",
     "check:layout": "node tools/check-sibling.mjs",
-    "dev:article": "npm run build:libs && npm run dev -w @kangaroos/article"
+    "dev:article": "npm run dev -w @kangaroos/article"
   },
   "engines": {
     "node": ">=22.6"

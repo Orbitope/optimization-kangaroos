@@ -16,6 +16,7 @@
     "src"
   ],
   "scripts": {
+    "predev": "npm --prefix ../.. run build:libs",
     "dev": "vite",
     "build": "tsc -p tsconfig.build.json",
     "build:demo": "vite build",
