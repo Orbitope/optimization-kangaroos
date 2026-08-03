@@ -67,3 +67,4 @@ components/custom-d3-component.js
 dist/
 *.tsbuildinfo
 shots/
+packages/scene/*.mjs
