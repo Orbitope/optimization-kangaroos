@@ -40,22 +40,27 @@ if (!existsSync(join(tokens, 'package.json'))) {
   From the directory above this one:
 
     git clone https://github.com/Orbitope/contentkit.git
-    cd contentkit/web~/packages/tokens && npm install && npm run build
+    cd contentkit/web~/packages/tokens && npm install
 
 └─────────────────────────────────────────────────────────────────────┘
 `)
   process.exit(1)
 }
 
-// Present but never built: the exports map points at dist/, so a source-only
-// checkout resolves to nothing and the failure surfaces much later as a
-// confusing "no exported member" from tsc.
-if (!existsSync(join(tokens, 'dist', 'index.js'))) {
+// Checked out but never installed. Building it is our job — `build:libs` runs
+// its build before anything that imports it — but we cannot run tsc there
+// without its devDependencies, and npm will not install them for us: a `file:`
+// dependency on a directory is symlinked, not built, so no lifecycle script of
+// ours ever fires inside that checkout.
+if (!existsSync(join(tokens, 'node_modules'))) {
   console.error(`
-@contentkit/tokens is checked out but not built.
+@contentkit/tokens is checked out but its dependencies are not installed.
 
   cd ${tokens}
-  npm install && npm run build
+  npm install
+
+(No need to build it — \`npm run build:libs\` does that, and re-does it every
+time, so a pull in the contentkit repo cannot leave you on stale tokens.)
 `)
   process.exit(1)
 }
