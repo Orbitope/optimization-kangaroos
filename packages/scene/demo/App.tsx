@@ -12,7 +12,7 @@ import {
   type OptimizerState,
   type Surface,
 } from '@kangaroos/core'
-import { DataShiftStack, SearchScene, useRunView } from '@kangaroos/scene'
+import { DataShiftMax, SearchScene, useRunView } from '@kangaroos/scene'
 import { Canvas } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -111,7 +111,7 @@ export function App() {
         </label>
 
         <label>
-          Data-shift overlay <span className="value">{overlayDraws || 'off'}</span>
+          Compare draws <span className="value">{overlayDraws || 'off'}</span>
           <input
             type="range"
             min={0}
@@ -256,13 +256,12 @@ export function App() {
             showTerrain={overlayDraws === 0}
           />
           {overlayDraws > 0 && (
-            <DataShiftStack
+            <DataShiftMax
               draws={overlayDraws}
               count={exampleCount}
               seed={dataSeed}
               transform={view.transform}
-              opacity={0.17}
-              resolution={72}
+              marginFade={0.08}
             />
           )}
         </Canvas>

@@ -4,7 +4,9 @@ import test from 'node:test'
 import {
   ackley,
   collect,
+  createSampledSurface,
   createSceneTransform,
+  createTrueSurface,
   hillClimber,
   himmelblau,
   mulberry32,
@@ -13,6 +15,7 @@ import {
 
 import {
   buildArrowField,
+  buildMaxTerrainGeometry,
   buildTerrainGeometry,
   buildTrailGeometry,
   elevationLutLinear,
@@ -233,4 +236,80 @@ test('strength normalizes against a quantile, not one cliff', () => {
   const visible = Array.from(f.strengths).filter((s) => s > 0.1).length
   assert.ok(saturated >= 1, 'nothing reached full strength')
   assert.ok(visible > f.count * 0.5, `only ${visible}/${f.count} arrows are visible`)
+})
+
+// ── max surface ────────────────────────────────────────────────────────────
+
+test('the max surface takes the tallest of its inputs at every point', () => {
+  const draws = [8, 9, 10].map((seed) => createSampledSurface({ count: 25, seed }))
+  const t = createSceneTransform(createTrueSurface(), { probeResolution: 48 })
+  const g = buildMaxTerrainGeometry(draws, ['#ff0000', '#00ff00', '#0000ff'], t, 24)
+
+  const d = draws[0]!.domain
+  for (let j = 0; j < 24; j++) {
+    const y = d.yMin + ((d.yMax - d.yMin) * j) / 23
+    for (let i = 0; i < 24; i++) {
+      const x = d.xMin + ((d.xMax - d.xMin) * i) / 23
+      const expected = t.toWorldY(Math.max(...draws.map((s) => s.height(x, y))))
+      assert.ok(
+        Math.abs(g.positions[(j * 24 + i) * 3 + 1]! - expected) < 1e-6,
+        `at (${x}, ${y}) the surface was not the maximum`,
+      )
+    }
+  }
+})
+
+test('the max surface is never below any single input', () => {
+  const draws = [1, 2, 3, 4].map((seed) => createSampledSurface({ count: 30, seed }))
+  const t = createSceneTransform(createTrueSurface(), { probeResolution: 48 })
+  const g = buildMaxTerrainGeometry(draws, draws.map(() => '#ffffff'), t, 20)
+  for (const single of draws) {
+    const s = buildTerrainGeometry(single, t, 20)
+    for (let k = 0; k < 400; k++) {
+      // Float32 slack, not algorithmic slack. buildTerrainGeometry rounds each
+      // height into a Float32Array before transforming it; the max builder
+      // keeps full precision until the end. Where the two agree exactly in
+      // f64 they can still land on adjacent f32 values, about 1.5e-8 apart.
+      assert.ok(g.positions[k * 3 + 1]! >= s.positions[k * 3 + 1]! - 1e-6)
+    }
+  }
+})
+
+test('each vertex is painted in the winning draw hue', () => {
+  // Two draws far apart in colour; every vertex must be one or the other.
+  const draws = [5, 6].map((seed) => createSampledSurface({ count: 20, seed }))
+  const t = createSceneTransform(createTrueSurface(), { probeResolution: 48 })
+  const g = buildMaxTerrainGeometry(draws, ['#ff0000', '#0000ff'], t, 24)
+  for (let k = 0; k < 24 * 24; k++) {
+    const [r, , bl] = [g.colors[k * 3]!, g.colors[k * 3 + 1]!, g.colors[k * 3 + 2]!]
+    assert.ok(r > 1e-6 !== bl > 1e-6, `vertex ${k} is neither purely red nor purely blue`)
+  }
+})
+
+test('margin fade desaturates where draws agree and not where they differ', () => {
+  const t = createSceneTransform(createTrueSurface(), { probeResolution: 48 })
+  const saturation = (count: number, marginFade: number) => {
+    const draws = [11, 12, 13, 14, 15].map((seed) => createSampledSurface({ count, seed }))
+    const colors = draws.map((_, i) => ['#C49A3C', '#6B7A8D', '#7D9A6A', '#9A7AB0', '#C47A5A'][i]!)
+    const g = buildMaxTerrainGeometry(draws, colors, t, 40, marginFade)
+    let total = 0
+    for (let k = 0; k < 40 * 40; k++) {
+      const c = [g.colors[k * 3]!, g.colors[k * 3 + 1]!, g.colors[k * 3 + 2]!]
+      const mean = (c[0]! + c[1]! + c[2]!) / 3
+      total += mean === 0 ? 0 : Math.max(...c.map((v) => Math.abs(v - mean))) / mean
+    }
+    return total / (40 * 40)
+  }
+  // Plain argmax cannot tell the two apart; margin fade must.
+  assert.ok(saturation(10, 0.08) > saturation(400, 0.08) * 1.5, 'fade did not respond to agreement')
+  assert.ok(saturation(400, 0) > saturation(400, 0.08), 'fade did not desaturate a converged set')
+})
+
+test('a max surface needs at least one input', () => {
+  const t = createSceneTransform(createTrueSurface(), { probeResolution: 48 })
+  assert.throws(() => buildMaxTerrainGeometry([], [], t, 8), /at least one surface/)
+  assert.throws(
+    () => buildMaxTerrainGeometry([createTrueSurface()], ['#fff000'], t, 1),
+    />= 2/,
+  )
 })

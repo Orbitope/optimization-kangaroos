@@ -100,6 +100,25 @@ export function buildTerrainGeometry(
     }
   }
 
+  return { positions, normals, colors, indices: buildGridIndices(n), heights01, resolution: n }
+}
+
+function assertGridResolution(n: number): void {
+  if (!Number.isInteger(n) || n < 2) {
+    throw new Error(`Grid resolution must be an integer >= 2, got ${n}`)
+  }
+}
+
+/**
+ * Triangulation for an n x n grid.
+ *
+ * Wound so front faces point at the sky. This is the opposite order to a
+ * rotated PlaneGeometry: domain +y maps to world -z, so the row index runs
+ * against the grain of three's usual convention. Getting it backwards makes
+ * the terrain invisible from above, which is a miserable thing to debug
+ * visually — hence the winding test.
+ */
+function buildGridIndices(n: number): Uint32Array {
   const indices = new Uint32Array((n - 1) * (n - 1) * 6)
   let w = 0
   for (let j = 0; j < n - 1; j++) {
@@ -108,11 +127,6 @@ export function buildTerrainGeometry(
       const b = a + 1
       const c = a + n
       const d = c + 1
-      // Wound so front faces point at the sky. Note this is the opposite order
-      // to a rotated PlaneGeometry: domain +y maps to world -z, so the row
-      // index runs against the grain of three's usual convention. Getting it
-      // backwards makes the terrain invisible from above, which is a miserable
-      // thing to debug visually — hence the winding test.
       indices[w++] = a
       indices[w++] = b
       indices[w++] = c
@@ -121,8 +135,115 @@ export function buildTerrainGeometry(
       indices[w++] = c
     }
   }
+  return indices
+}
 
-  return { positions, normals, colors, indices, heights01, resolution: n }
+/**
+ * The pointwise maximum of several landscapes, coloured by which one won.
+ *
+ * For comparing draws of the same data, this beats stacking translucent skins
+ * outright. Transparency has to solve an ordering problem that has no good
+ * answer with five overlapping surfaces — additive saturates to white, alpha
+ * depends on draw order, and either way the middle of the frame turns to mud.
+ * A max surface is opaque, sorts correctly for free, and answers a sharper
+ * question: at this spot, whose hill is on top?
+ *
+ * The reading inverts from the stacked version and is stronger for it. A broad
+ * solid patch of one colour is ground that a single draw invented and no other
+ * draw supports. Speckle means the draws are within a hair of each other, which
+ * is what agreement looks like.
+ *
+ * Colour is modulated by altitude so the surface still reads as terrain rather
+ * than as a flat choropleth; hue says who, brightness says how high.
+ */
+export function buildMaxTerrainGeometry(
+  surfaces: readonly Surface[],
+  colors: readonly string[],
+  transform: SceneTransform,
+  resolution: number,
+  /**
+   * Fade a winner's colour toward neutral when it barely won, expressed as a
+   * fraction of the altitude range. 0 disables.
+   *
+   * Argmax alone is scale-free: it reports who is on top without regard for by
+   * how much, so five draws that have all but converged still carve the map
+   * into confident coloured territories. Weighting by the margin over the
+   * runner-up is what makes the figure say something — strong colour where a
+   * draw genuinely owns the ground, neutral where the draws agree and the
+   * winner is a coin toss.
+   */
+  marginFade = 0,
+): TerrainGeometry {
+  if (surfaces.length === 0) throw new Error('Need at least one surface to take a maximum of')
+  assertGridResolution(resolution)
+
+  const n = resolution
+  const positions = new Float32Array(n * n * 3)
+  const normals = new Float32Array(n * n * 3)
+  const outColors = new Float32Array(n * n * 3)
+  const heights01 = new Float32Array(n * n)
+
+  const linear = colors.map((c) => hexToLinear01(c))
+  const { xMin, xMax, yMin, yMax } = surfaces[0]!.domain
+
+  for (let j = 0; j < n; j++) {
+    const y = yMin + ((yMax - yMin) * j) / (n - 1)
+    for (let i = 0; i < n; i++) {
+      const x = xMin + ((xMax - xMin) * i) / (n - 1)
+      const k = j * n + i
+
+      let winner = 0
+      let best = -Infinity
+      let second = -Infinity
+      for (let d = 0; d < surfaces.length; d++) {
+        const h = surfaces[d]!.height(x, y)
+        if (!Number.isFinite(h)) continue
+        if (h > best) {
+          second = best
+          best = h
+          winner = d
+        } else if (h > second) {
+          second = h
+        }
+      }
+      if (!Number.isFinite(best)) best = transform.heightMin
+
+      const p = transform.toWorld(x, y, best)
+      positions[k * 3] = p.x
+      positions[k * 3 + 1] = p.y
+      positions[k * 3 + 2] = p.z
+
+      // Normal from the winning surface only — averaging across draws would
+      // smooth over exactly the ridges where one draw takes over from another.
+      const g = surfaces[winner]!.gradient(x, y)
+      const nv = transform.normalFromGradient({
+        x: Number.isFinite(g.x) ? g.x : 0,
+        y: Number.isFinite(g.y) ? g.y : 0,
+      })
+      normals[k * 3] = nv.x
+      normals[k * 3 + 1] = nv.y
+      normals[k * 3 + 2] = nv.z
+
+      const t = Math.min(1, Math.max(0, transform.normalizeHeight(best)))
+      heights01[k] = t
+      const shade = 0.28 + 0.72 * t
+      const c = linear[winner % linear.length]!
+
+      let confidence = 1
+      if (marginFade > 0 && Number.isFinite(second)) {
+        const span = transform.heightMax - transform.heightMin
+        confidence = Math.min(1, (best - second) / (span * marginFade))
+      }
+      // Toward the mid grey of the winning colour rather than to grey outright,
+      // so a contested region still reads as terrain and not as a hole.
+      const grey = (c[0] + c[1] + c[2]) / 3
+      outColors[k * 3] = (grey + (c[0] - grey) * confidence) * shade
+      outColors[k * 3 + 1] = (grey + (c[1] - grey) * confidence) * shade
+      outColors[k * 3 + 2] = (grey + (c[2] - grey) * confidence) * shade
+    }
+  }
+
+  return { positions, normals, colors: outColors, indices: buildGridIndices(n), heights01, resolution: n }
 }
 
 // ── trails ─────────────────────────────────────────────────────────────────
