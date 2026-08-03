@@ -34,8 +34,8 @@ export interface TerrainGeometry {
  * colour management is on, and handing it sRGB values washes the whole terrain
  * out in a way that is easy to mistake for a lighting problem.
  */
-export function elevationLutLinear(size = 256): Float32Array {
-  const hexes = elevationLut(size)
+export function elevationLutLinear(size = 256, ramp?: string): Float32Array {
+  const hexes = elevationLut(size, ramp)
   const out = new Float32Array(size * 3)
   hexes.forEach((hex, i) => {
     const [r, g, b] = hexToLinear01(hex)

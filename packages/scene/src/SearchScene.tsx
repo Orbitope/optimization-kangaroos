@@ -76,6 +76,10 @@ export interface SearchSceneProps {
   terrainResolution?: number
   /** Contour lines across the altitude range. 0 turns them off. */
   contours?: number
+  /** Named elevation ramp. Omit for the ContentKit default. */
+  ramp?: string
+  /** Draw the terrain surface. Off when ghost layers are the subject. */
+  showTerrain?: boolean
   wireframe?: boolean
   orbit?: boolean
 }
@@ -100,6 +104,8 @@ export function SearchScene({
   contours = 22,
   wireframe = false,
   orbit = true,
+  ramp,
+  showTerrain = true,
 }: SearchSceneProps) {
   const { states, transform, path, populationPaths } = view
   const cursor = hopAt(path.length, frame, framesPerStep)
@@ -135,13 +141,16 @@ export function SearchScene({
       <fog attach="fog" args={[hexToInt(CKColor.void), 3.2, 7]} />
       <SceneLighting />
 
+      {showTerrain && (
       <Terrain
         surface={surface}
         transform={transform}
         resolution={terrainResolution}
         wireframe={wireframe}
         contours={contours}
+        ramp={ramp}
       />
+      )}
 
       {showGradients && <GradientField surface={surface} transform={transform} />}
 

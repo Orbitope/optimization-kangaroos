@@ -16,6 +16,8 @@ export interface TerrainProps {
   contours?: number
   /** How much a contour darkens the surface, 0..1. */
   contourStrength?: number
+  /** Named elevation ramp. Omit for the ContentKit default. */
+  ramp?: string
 }
 
 /**
@@ -32,9 +34,10 @@ export function Terrain({
   wireframe,
   contours = 22,
   contourStrength = 0.42,
+  ramp,
 }: TerrainProps) {
   const geometry = useMemo(() => {
-    const built = buildTerrainGeometry(surface, transform, resolution, elevationLutLinear())
+    const built = buildTerrainGeometry(surface, transform, resolution, elevationLutLinear(256, ramp))
     const g = new THREE.BufferGeometry()
     g.setAttribute('position', new THREE.BufferAttribute(built.positions, 3))
     // Supplied, not computed: these come from the exact analytic gradients, and
@@ -45,7 +48,7 @@ export function Terrain({
     g.setIndex(new THREE.BufferAttribute(built.indices, 1))
     g.computeBoundingSphere()
     return g
-  }, [surface, transform, resolution])
+  }, [surface, transform, resolution, ramp])
 
   /**
    * Contours are drawn in the fragment shader rather than extracted as

@@ -1,3 +1,4 @@
+import { RAMP_NAMES } from '@contentkit/tokens'
 import {
   SURFACES,
   collect,
@@ -11,7 +12,7 @@ import {
   type OptimizerState,
   type Surface,
 } from '@kangaroos/core'
-import { SearchScene, useRunView } from '@kangaroos/scene'
+import { DataShiftStack, SearchScene, useRunView } from '@kangaroos/scene'
 import { Canvas } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -35,6 +36,8 @@ export function App() {
   const [surfaceName, setSurfaceName] = useState('Himmelblau')
   const [exampleCount, setExampleCount] = useState(20)
   const [dataSeed, setDataSeed] = useState(0)
+  const [ramp, setRamp] = useState('hypsometric')
+  const [overlayDraws, setOverlayDraws] = useState(0)
   const [algorithm, setAlgorithm] = useState<AlgorithmName>('hill climber')
   const [seed, setSeed] = useState(1)
   const [playing, setPlaying] = useState(true)
@@ -96,6 +99,26 @@ export function App() {
             <option>{DATA}</option>
             <option>{TRUTH}</option>
           </select>
+        </label>
+
+        <label>
+          Colour ramp
+          <select value={ramp} onChange={(e) => setRamp(e.target.value)}>
+            {RAMP_NAMES.map((r) => (
+              <option key={r}>{r}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          Data-shift overlay <span className="value">{overlayDraws || 'off'}</span>
+          <input
+            type="range"
+            min={0}
+            max={5}
+            value={overlayDraws}
+            onChange={(e) => setOverlayDraws(Number(e.target.value))}
+          />
         </label>
 
         {isSampled && (
@@ -229,7 +252,19 @@ export function App() {
             showGradients={showGradients}
             showProbes={showProbes}
             wireframe={wireframe}
+            ramp={ramp}
+            showTerrain={overlayDraws === 0}
           />
+          {overlayDraws > 0 && (
+            <DataShiftStack
+              draws={overlayDraws}
+              count={exampleCount}
+              seed={dataSeed}
+              transform={view.transform}
+              opacity={0.17}
+              resolution={72}
+            />
+          )}
         </Canvas>
       </main>
     </div>
