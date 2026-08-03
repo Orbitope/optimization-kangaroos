@@ -1,6 +1,8 @@
 import {
   SURFACES,
   collect,
+  createSampledSurface,
+  createTrueSurface,
   geneticAlgorithm,
   gradientAscent,
   hillClimber,
@@ -26,8 +28,13 @@ const ALGORITHMS = {
 
 type AlgorithmName = keyof typeof ALGORITHMS
 
+const DATA = 'Data (Act 4)'
+const TRUTH = 'Truth (Act 4)'
+
 export function App() {
   const [surfaceName, setSurfaceName] = useState('Himmelblau')
+  const [exampleCount, setExampleCount] = useState(20)
+  const [dataSeed, setDataSeed] = useState(0)
   const [algorithm, setAlgorithm] = useState<AlgorithmName>('hill climber')
   const [seed, setSeed] = useState(1)
   const [playing, setPlaying] = useState(true)
@@ -37,10 +44,13 @@ export function App() {
   const [wireframe, setWireframe] = useState(false)
   const [frame, setFrame] = useState(0)
 
-  const surface = useMemo(
-    () => SURFACES.find((s) => s.name === surfaceName) ?? SURFACES[0]!,
-    [surfaceName],
-  )
+  const surface = useMemo(() => {
+    if (surfaceName === DATA) return createSampledSurface({ count: exampleCount, seed: dataSeed })
+    if (surfaceName === TRUTH) return createTrueSurface()
+    return SURFACES.find((s) => s.name === surfaceName) ?? SURFACES[0]!
+  }, [surfaceName, exampleCount, dataSeed])
+
+  const isSampled = surfaceName === DATA
   const states: OptimizerState[] = useMemo(
     () => ALGORITHMS[algorithm](surface, seed),
     [algorithm, surface, seed],
@@ -83,8 +93,30 @@ export function App() {
             {SURFACES.map((s) => (
               <option key={s.name}>{s.name}</option>
             ))}
+            <option>{DATA}</option>
+            <option>{TRUTH}</option>
           </select>
         </label>
+
+        {isSampled && (
+          <>
+            <label>
+              Examples <span className="value">{exampleCount}</span>
+              <input
+                type="range"
+                min={3}
+                max={400}
+                value={exampleCount}
+                onChange={(e) => setExampleCount(Number(e.target.value))}
+              />
+            </label>
+            <div className="row">
+              <button onClick={() => setDataSeed((d) => d + 1)}>
+                Reshuffle data (#{dataSeed})
+              </button>
+            </div>
+          </>
+        )}
 
         <label>
           Algorithm

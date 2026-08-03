@@ -211,6 +211,18 @@ export interface GradientAscentOptions extends BaseOptions {
   readonly gradientTol?: number
   /** Value change below which the run is considered stuck rather than done. */
   readonly valueTol?: number
+  /**
+   * Scale the gradient to unit length before stepping. Default `true`.
+   *
+   * True is the well-behaved default and false is what backprop actually does.
+   * With it off, `stepSize` becomes a genuine **learning rate** — a plain
+   * multiplier on the raw gradient — so hop length tracks how steep the ground
+   * is. That is the whole of the email's complaint: "the distance the kangaroo
+   * hops is related to the steepness of the terrain", tiny hops on a gentle
+   * plain and dangerous ones on a mountainside. It cannot be demonstrated
+   * while the gradient is normalized, because normalizing is precisely the fix.
+   */
+  readonly normalize?: boolean
 }
 
 /**
@@ -232,12 +244,17 @@ export function* gradientAscent(
   const momentum = opts.momentum ?? 0
   const gradientTol = opts.gradientTol ?? 1e-6
   const valueTol = opts.valueTol ?? 0
+  const normalizeStep = opts.normalize ?? true
   let stepSize = opts.stepSize ?? domainDiagonal(surface.domain) * 0.015
 
   let current = at(surface, opts.start ?? randomStart(surface, rng))
   let best = current
   let velocity: Vec2 = { x: 0, y: 0 }
 
+  // Invariant: `grad` is always the gradient at `current.position`, so a state
+  // reports the slope where the kangaroo is standing. Recomputing it at the top
+  // of the loop instead left `meta.gradient` one step stale, which made the
+  // reported slope disagree with the hop it produced.
   let grad = surface.gradient(current.position.x, current.position.y)
 
   const emit = (step: number, done: boolean, termination: Termination): OptimizerState => ({
@@ -247,22 +264,28 @@ export function* gradientAscent(
     best,
     done,
     termination,
-    meta: { stepSize, gradient: magnitude(grad), speed: magnitude(velocity) },
+    meta: {
+      stepSize,
+      gradient: magnitude(grad),
+      speed: magnitude(velocity),
+      normalized: normalizeStep ? 1 : 0,
+    },
   })
 
   if (maxSteps < 1) return emit(0, true, 'max-steps')
   yield emit(0, false, null)
 
   for (let step = 1; step <= maxSteps; step++) {
-    grad = surface.gradient(current.position.x, current.position.y)
     const slope = magnitude(grad)
 
     if (!Number.isFinite(slope)) return emit(step, true, 'stalled')
     if (slope < gradientTol && momentum === 0) return emit(step, true, 'converged')
 
-    // Normalize first, then scale — hop length is a parameter, not a
-    // consequence of how steep the ground happens to be.
-    const push = scaleVec(normalize(grad), stepSize)
+    // Normalized: hop length is a parameter. Raw: hop length is a consequence
+    // of how steep the ground happens to be, and `stepSize` is a learning rate.
+    const push = normalizeStep
+      ? scaleVec(normalize(grad), stepSize)
+      : scaleVec(grad, stepSize)
     velocity = addVec(scaleVec(velocity, momentum), push)
 
     const proposed = addVec(current.position, velocity)
@@ -274,6 +297,7 @@ export function* gradientAscent(
 
     const previousValue = current.value
     current = at(surface, landed)
+    grad = surface.gradient(current.position.x, current.position.y)
     best = better(best, current)
     stepSize *= stepDecay
 
