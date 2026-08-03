@@ -22,6 +22,8 @@ export interface TerrainGeometry {
   readonly normals: Float32Array
   readonly colors: Float32Array
   readonly indices: Uint32Array
+  /** Altitude normalized to 0..1, per vertex. Drives the contour lines. */
+  readonly heights01: Float32Array
   readonly resolution: number
 }
 
@@ -65,6 +67,7 @@ export function buildTerrainGeometry(
   const positions = new Float32Array(n * n * 3)
   const normals = new Float32Array(n * n * 3)
   const colors = new Float32Array(n * n * 3)
+  const heights01 = new Float32Array(n * n)
 
   const { xMin, xMax, yMin, yMax } = surface.domain
 
@@ -89,6 +92,7 @@ export function buildTerrainGeometry(
       normals[k * 3 + 2] = nv.z
 
       const t = Math.min(1, Math.max(0, transform.normalizeHeight(h)))
+      heights01[k] = t
       const bucket = Math.min(lutSize - 1, Math.round(t * (lutSize - 1)))
       colors[k * 3] = lut[bucket * 3]!
       colors[k * 3 + 1] = lut[bucket * 3 + 1]!
@@ -118,7 +122,7 @@ export function buildTerrainGeometry(
     }
   }
 
-  return { positions, normals, colors, indices, resolution: n }
+  return { positions, normals, colors, indices, heights01, resolution: n }
 }
 
 // ── trails ─────────────────────────────────────────────────────────────────

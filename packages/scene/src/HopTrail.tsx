@@ -1,7 +1,13 @@
 import { CKColor, CKMarker } from '@contentkit/tokens'
 import type { Vec3 } from '@kangaroos/core'
-import { useEffect, useMemo, useRef } from 'react'
+import { useThree } from '@react-three/fiber'
+import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
+import { Line2 } from 'three/examples/jsm/lines/Line2.js'
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
+import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
+import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 
 import { buildTrailGeometry } from './geometry.js'
 
@@ -13,103 +19,115 @@ export interface HopTrailProps {
   color?: string
   /** Arc samples per hop. Higher is smoother; 16 is already hard to fault. */
   samplesPerHop?: number
-  /** Fraction of the run over which an old segment fades out. 0 disables. */
-  fade?: number
+  /** Stroke width in screen pixels. */
+  width?: number
   opacity?: number
+  /** Draw a dark casing behind the stroke so it reads on any terrain. */
+  halo?: boolean
 }
 
 /**
  * The arcs the kangaroo leaves behind.
  *
- * The whole run is uploaded once and revealed by moving a single uniform.
- * Rebuilding or re-slicing the buffer each frame is the obvious alternative and
- * it is what makes long runs stutter — a 64k-point genetic run would churn
- * megabytes per second of garbage for no visual difference.
+ * Fat lines rather than `THREE.Line`, because `linewidth` on a plain line is
+ * silently ignored by every ANGLE-backed browser — you always get one pixel,
+ * which is too thin to read against terrain.
+ *
+ * `Line2` builds each segment as an instance, which makes revealing the trail
+ * a single integer write: `instanceCount` caps how many segments draw. The
+ * whole run uploads once and never changes. Re-slicing the buffer per frame is
+ * the obvious alternative and it is what makes long runs stutter.
  */
 export function HopTrail({
   points,
   reveal,
-  color = CKColor.coralBright,
+  color = CKColor.coral,
   samplesPerHop = 16,
-  fade = 0,
+  width = 3,
   opacity = 0.95,
+  halo = true,
 }: HopTrailProps) {
-  const geometry = useMemo(() => {
+  const size = useThree((s) => s.size)
+
+  const { geometry, segments } = useMemo(() => {
     const built = buildTrailGeometry(points, samplesPerHop)
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.BufferAttribute(built.positions, 3))
-    g.setAttribute('aProgress', new THREE.BufferAttribute(built.progress, 1))
-    g.computeBoundingSphere()
-    return g
+    const g = new LineGeometry()
+    // setPositions wants a plain array of xyz triples; a zero-length run would
+    // produce a geometry with no instances, which renders as nothing.
+    g.setPositions(built.positions.length > 0 ? Array.from(built.positions) : [0, 0, 0, 0, 0, 0])
+    return { geometry: g, segments: Math.max(0, built.pointCount - 1) }
   }, [points, samplesPerHop])
 
-  const material = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      // Additive, so the trace is always brighter than whatever it crosses.
-      // A single-tone line cannot otherwise stay legible over the elevation
-      // ramp — the ramp sweeps the whole luminance axis and is guaranteed to
-      // match the trail's own brightness somewhere along it.
-      blending: THREE.AdditiveBlending,
-      uniforms: {
-        uReveal: { value: 0 },
-        uFade: { value: fade },
-        uOpacity: { value: opacity },
-        // THREE.Color converts the sRGB hex into the working space for us.
-        uColor: { value: new THREE.Color(color) },
-      },
-      vertexShader: /* glsl */ `
-        attribute float aProgress;
-        varying float vProgress;
-        void main() {
-          vProgress = aProgress;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: /* glsl */ `
-        uniform float uReveal;
-        uniform float uFade;
-        uniform float uOpacity;
-        uniform vec3 uColor;
-        varying float vProgress;
+  // Normal blending, not additive. Additive was the first attempt and it does
+  // guarantee visibility, but bright coral over amber terrain saturates every
+  // channel and the trail comes out white — legible, and the wrong colour.
+  //
+  // The casing is the same trick the marker ring uses: a wider dark stroke
+  // behind a narrower bright one. A single tone cannot stay legible across a
+  // full-range elevation ramp, because the ramp sweeps the whole luminance
+  // axis and is guaranteed to match the trail's own brightness somewhere.
+  const material = useMemo(
+    () =>
+      new LineMaterial({
+        color: new THREE.Color(color).getHex(),
+        linewidth: width,
+        transparent: true,
+        opacity,
+        depthWrite: false,
+      }),
+    [color, width, opacity],
+  )
 
-        void main() {
-          // Nothing beyond the playhead has happened yet.
-          if (vProgress > uReveal) discard;
+  const haloMaterial = useMemo(
+    () =>
+      new LineMaterial({
+        color: new THREE.Color(CKMarker.ringInner).getHex(),
+        linewidth: width + 3,
+        transparent: true,
+        opacity: Math.min(1, opacity * 0.85),
+        depthWrite: false,
+      }),
+    [width, opacity],
+  )
 
-          float alpha = uOpacity;
-          if (uFade > 0.0) {
-            float age = uReveal - vProgress;
-            alpha *= clamp(1.0 - age / uFade, 0.08, 1.0);
-          }
-          gl_FragColor = vec4(uColor, alpha);
-        }
-      `,
-    })
-  }, [color, fade, opacity])
-
-  // Uniform writes are cheap; this is the only per-frame work the trail does.
-  material.uniforms.uReveal!.value = Math.min(1, Math.max(0, reveal))
-  material.uniforms.uFade!.value = fade
-  material.uniforms.uOpacity!.value = opacity
-
-  // THREE.Line has no unambiguous R3F intrinsic — <line> collides with SVG's
-  // in the JSX namespace — so build the object and hand it over directly.
   const line = useMemo(() => {
-    const l = new THREE.Line(geometry, material)
+    const l = new Line2(geometry, material)
     l.frustumCulled = false
+    l.renderOrder = 1
     return l
   }, [geometry, material])
 
+  const haloLine = useMemo(() => {
+    const l = new Line2(geometry, haloMaterial)
+    l.frustumCulled = false
+    l.renderOrder = 0
+    return l
+  }, [geometry, haloMaterial])
+
+  // Screen-space width needs the drawing buffer size, or strokes scale wrongly
+  // on resize and on high-DPI displays.
+  material.resolution.set(size.width, size.height)
+  material.linewidth = width
+  material.opacity = opacity
+  haloMaterial.resolution.set(size.width, size.height)
+  haloMaterial.linewidth = width + 3
+
+  geometry.instanceCount = Math.max(0, Math.round(Math.min(1, Math.max(0, reveal)) * segments))
+
   useEffect(() => () => geometry.dispose(), [geometry])
   useEffect(() => () => material.dispose(), [material])
+  useEffect(() => () => haloMaterial.dispose(), [haloMaterial])
 
-  return <primitive object={line} />
+  return (
+    <>
+      {halo && <primitive object={haloLine} />}
+      <primitive object={line} />
+    </>
+  )
 }
 
 /**
- * Ghost arcs for proposals the optimizer looked at and turned down.
+ * Ghost lines to proposals the optimizer looked at and turned down.
  *
  * The hill climber trying a dozen directions before one sticks is the clearest
  * picture of what "search" actually means, and it is invisible in the accepted
@@ -120,33 +138,50 @@ export function RejectedProbes({
   probes,
   t,
   color = CKMarker.ringOuter,
+  width = 1.5,
 }: {
   from: Vec3
   probes: readonly Vec3[]
   /** Progress through the current step, used to fade the probes back out. */
   t: number
   color?: string
+  width?: number
 }) {
-  const ref = useRef<THREE.LineSegments>(null)
+  const size = useThree((s) => s.size)
 
   const geometry = useMemo(() => {
-    const positions = new Float32Array(probes.length * 6)
-    probes.forEach((p, i) => {
-      positions.set([from.x, from.y, from.z, p.x, p.y, p.z], i * 6)
-    })
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    const positions: number[] = []
+    for (const p of probes) positions.push(from.x, from.y, from.z, p.x, p.y, p.z)
+    const g = new LineSegmentsGeometry()
+    g.setPositions(positions.length > 0 ? positions : [0, 0, 0, 0, 0, 0])
     return g
   }, [from, probes])
 
-  useEffect(() => () => geometry.dispose(), [geometry])
-
-  // Brightest as the step begins, gone by the time the kangaroo lands.
-  const alpha = 0.5 * (1 - Math.min(1, Math.max(0, t)))
-
-  return (
-    <lineSegments ref={ref} geometry={geometry} frustumCulled={false}>
-      <lineBasicMaterial color={color} transparent opacity={alpha} depthWrite={false} />
-    </lineSegments>
+  const material = useMemo(
+    () =>
+      new LineMaterial({
+        color: new THREE.Color(color).getHex(),
+        linewidth: width,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    [color, width],
   )
+
+  const segments = useMemo(() => {
+    const s = new LineSegments2(geometry, material)
+    s.frustumCulled = false
+    return s
+  }, [geometry, material])
+
+  material.resolution.set(size.width, size.height)
+  // Brightest as the step begins, gone by the time the kangaroo lands.
+  material.opacity = 0.45 * (1 - Math.min(1, Math.max(0, t)))
+
+  useEffect(() => () => geometry.dispose(), [geometry])
+  useEffect(() => () => material.dispose(), [material])
+
+  if (probes.length === 0) return null
+  return <primitive object={segments} />
 }

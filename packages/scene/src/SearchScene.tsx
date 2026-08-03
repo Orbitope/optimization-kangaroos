@@ -71,9 +71,11 @@ export interface SearchSceneProps {
   showGradients?: boolean
   showProbes?: boolean
   showTrail?: boolean
-  /** Fraction of the run over which trails fade. 0 keeps the whole history. */
-  trailFade?: number
+  /** Trail stroke width in screen pixels. */
+  trailWidth?: number
   terrainResolution?: number
+  /** Contour lines across the altitude range. 0 turns them off. */
+  contours?: number
   wireframe?: boolean
   orbit?: boolean
 }
@@ -93,8 +95,9 @@ export function SearchScene({
   showGradients = false,
   showProbes = false,
   showTrail = true,
-  trailFade = 0,
+  trailWidth = 3.5,
   terrainResolution = 192,
+  contours = 22,
   wireframe = false,
   orbit = true,
 }: SearchSceneProps) {
@@ -137,12 +140,13 @@ export function SearchScene({
         transform={transform}
         resolution={terrainResolution}
         wireframe={wireframe}
+        contours={contours}
       />
 
       {showGradients && <GradientField surface={surface} transform={transform} />}
 
       {showTrail && !populationPaths && (
-        <HopTrail points={path} reveal={reveal} fade={trailFade} />
+        <HopTrail points={path} reveal={reveal} width={trailWidth} />
       )}
       {showTrail &&
         populationPaths?.map((p, i) => (
@@ -152,8 +156,8 @@ export function SearchScene({
             reveal={reveal}
             color={dataSeries(i)}
             samplesPerHop={8}
-            opacity={0.45}
-            fade={trailFade || 0.25}
+            width={trailWidth * 0.55}
+            opacity={0.5}
           />
         ))}
 
