@@ -11,9 +11,11 @@ import {
   fitGaussianProcess,
   matern52,
   mulberry32,
+  makeAcquisition,
   posteriorGrid,
   square,
   uniform,
+  upperConfidenceBound,
   type Surface,
 } from '../dist/index.js'
 
@@ -374,4 +376,105 @@ test('the length scale is not a knife edge', () => {
 
   const spread = Math.max(...scores) - Math.min(...scores)
   assert.ok(spread < 4, `length scale swung the result by ${spread.toFixed(1)}: ${scores}`)
+})
+
+// ── the exploration dial ───────────────────────────────────────────────────
+
+test('kappa sweeps from pure exploitation to pure exploration', () => {
+  // The claim that a slider on this figure would be honest. Measured, not
+  // asserted: how far each new sample lands from the nearest place she has
+  // already stood. Exploitation means going back to what worked, so that
+  // distance is small; exploration means going somewhere new, so it is large.
+  const surface = SURFACES_BY_NAME.Himmelblau!
+  const d = surface.domain
+
+  const novelty = (kappa: number) => {
+    let total = 0
+    let count = 0
+    for (let seed = 0; seed < 10; seed++) {
+      const states = collect(
+        bayesianOptimization(surface, mulberry32(seed), {
+          maxSteps: 24,
+          acquisition: 'ucb',
+          kappa,
+          recordModel: false,
+        }),
+      )
+      const seen = states[states.length - 1]!.observations
+      // Skip the random opening — it is the same regardless of kappa, so
+      // including it would dilute the effect being measured.
+      for (let i = 6; i < seen.length; i++) {
+        let nearest = Infinity
+        for (let j = 0; j < i; j++) {
+          nearest = Math.min(
+            nearest,
+            Math.hypot(
+              seen[i]!.position.x - seen[j]!.position.x,
+              seen[i]!.position.y - seen[j]!.position.y,
+            ),
+          )
+        }
+        total += nearest
+        count++
+      }
+    }
+    return total / count / Math.hypot(d.xMax - d.xMin, d.yMax - d.yMin)
+  }
+
+  const exploit = novelty(0)
+  const middle = novelty(2)
+  const explore = novelty(12)
+
+  assert.ok(
+    exploit < middle && middle < explore,
+    `kappa should sweep novelty monotonically, got ${exploit.toFixed(4)} -> ${middle.toFixed(4)} -> ${explore.toFixed(4)}`,
+  )
+  // And it must be a real swing rather than a rounding artefact.
+  assert.ok(
+    explore > exploit * 3,
+    `kappa 12 should explore far more than kappa 0: ${explore.toFixed(4)} vs ${exploit.toFixed(4)}`,
+  )
+})
+
+test('pure exploitation is worse than the balanced setting, which is the point', () => {
+  // If kappa 0 did just as well there would be no trade-off to teach.
+  const surface = SURFACES_BY_NAME.Ackley!
+  const mean = (kappa: number) => {
+    let total = 0
+    for (let seed = 0; seed < 12; seed++) {
+      const states = collect(
+        bayesianOptimization(surface, mulberry32(seed), {
+          maxSteps: 25,
+          acquisition: 'ucb',
+          kappa,
+          recordModel: false,
+        }),
+      )
+      total += states[states.length - 1]!.best.value
+    }
+    return total / 12
+  }
+  assert.ok(mean(2) > mean(0), `balanced ${mean(2).toFixed(2)} should beat greedy ${mean(0).toFixed(2)}`)
+})
+
+test('ucb is the mean plus kappa standard deviations, exactly', () => {
+  assert.equal(upperConfidenceBound(3, 0.5, 0), 3)
+  assert.equal(upperConfidenceBound(3, 0.5, 2), 4)
+  assert.equal(upperConfidenceBound(-1, 2, 1.5), 2)
+})
+
+test('makeAcquisition returns the function it was asked for', () => {
+  const ei = makeAcquisition('ei', { xi: 0 })
+  assert.equal(ei(2, 1, 1), expectedImprovement(2, 1, 1, 0))
+
+  const ucb = makeAcquisition('ucb', { kappa: 3 })
+  // Shifted by the incumbent, so zero means the same thing in both modes.
+  assert.equal(ucb(2, 1, 1), 2 + 3 * 1 - 1)
+})
+
+test('posteriorGrid still accepts a bare xi, so old call sites keep working', () => {
+  const gp = fitGaussianProcess([{ position: { x: 0, y: 0 }, value: 5 }], OPTS)
+  const viaNumber = posteriorGrid(gp, bump, 5, 12, 0.01)
+  const viaFunction = posteriorGrid(gp, bump, 5, 12, makeAcquisition('ei', { xi: 0.01 }))
+  assert.deepEqual(Array.from(viaNumber.acquisition), Array.from(viaFunction.acquisition))
 })

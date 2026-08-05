@@ -234,6 +234,52 @@ export function expectedImprovement(mean: number, sd: number, best: number, xi =
   return Math.max(0, improvement * normCdf(z) + sd * normPdf(z))
 }
 
+/**
+ * Upper Confidence Bound: `mean + kappa * sd`.
+ *
+ * The explicit form of the trade-off, and the one to reach for when the point
+ * is to *show* the trade-off rather than to win a benchmark. Kappa is the
+ * number of standard deviations of optimism she allows herself, and it sweeps
+ * the whole range with nothing hidden:
+ *
+ * - `kappa = 0` — pure exploitation. Go wherever the map says is highest,
+ *   however sure or unsure she is. She will polish one hill forever.
+ * - `kappa ≈ 2` — the useful middle. Roughly "go where the optimistic estimate
+ *   is highest", which is what a person actually does.
+ * - `kappa > 6` — pure exploration. Go wherever she knows least, regardless of
+ *   whether there is any reason to expect height there. A survey, not a search.
+ *
+ * Expected Improvement has no equivalent dial. Its `xi` shifts the bar being
+ * cleared, which nudges the balance but cannot reach either extreme — at
+ * xi = 0 it still rewards uncertainty, and no finite xi turns exploration off.
+ * That makes EI the better default and UCB the better *slider*.
+ */
+export function upperConfidenceBound(mean: number, sd: number, kappa: number): number {
+  return mean + kappa * sd
+}
+
+export type AcquisitionKind = 'ei' | 'ucb'
+
+/**
+ * The acquisition function as a closure over its own tuning.
+ *
+ * `best` is passed at call time because it changes every step; kappa and xi are
+ * bound once, since they are the figure's settings rather than the run's state.
+ */
+export function makeAcquisition(
+  kind: AcquisitionKind,
+  tuning: { readonly xi?: number; readonly kappa?: number } = {},
+): (mean: number, sd: number, best: number) => number {
+  if (kind === 'ucb') {
+    const kappa = tuning.kappa ?? 2
+    // Shifted by the incumbent so both acquisitions are on the same scale and
+    // "zero means nothing to gain here" reads the same way in either mode.
+    return (mean, sd, best) => upperConfidenceBound(mean, sd, kappa) - best
+  }
+  const xi = tuning.xi ?? 0.01
+  return (mean, sd, best) => expectedImprovement(mean, sd, best, xi)
+}
+
 // ── the posterior, on a grid ───────────────────────────────────────────────
 
 export interface PosteriorGrid {
@@ -263,12 +309,16 @@ export function posteriorGrid(
   surface: Surface,
   best: number,
   resolution: number,
-  xi = 0.01,
+  acquisition: ((mean: number, sd: number, best: number) => number) | number = 0.01,
 ): PosteriorGrid {
+  // A bare number is the old signature's `xi`, kept working so existing call
+  // sites and tests do not have to know about acquisition kinds.
+  const score =
+    typeof acquisition === 'function' ? acquisition : makeAcquisition('ei', { xi: acquisition })
   const d = surface.domain
   const mean = new Float64Array(resolution * resolution)
   const sd = new Float64Array(resolution * resolution)
-  const acquisition = new Float64Array(resolution * resolution)
+  const acquisitionOut = new Float64Array(resolution * resolution)
 
   let meanMin = Infinity
   let meanMax = -Infinity
@@ -287,19 +337,23 @@ export function posteriorGrid(
       const idx = j * resolution + i
 
       const p = gp.predict({ x, y })
-      const a = expectedImprovement(p.mean, p.sd, best, xi)
+      const a = score(p.mean, p.sd, best)
 
       mean[idx] = p.mean
       sd[idx] = p.sd
-      acquisition[idx] = a
+      // Clamped at zero. UCB minus the incumbent goes negative on ground she is
+      // confident is worse than what she has, and a negative "how good would it
+      // be to go here" has no meaning for either the renderer or the argmax.
+      acquisitionOut[idx] = Math.max(0, a)
 
       if (p.mean < meanMin) meanMin = p.mean
       if (p.mean > meanMax) meanMax = p.mean
       if (p.sd < sdMin) sdMin = p.sd
       if (p.sd > sdMax) sdMax = p.sd
-      if (a < acqMin) acqMin = a
-      if (a > acqMax) {
-        acqMax = a
+      const clamped = Math.max(0, a)
+      if (clamped < acqMin) acqMin = clamped
+      if (clamped > acqMax) {
+        acqMax = clamped
         argmax = { x, y }
       }
     }
@@ -309,7 +363,7 @@ export function posteriorGrid(
     resolution,
     mean,
     sd,
-    acquisition,
+    acquisition: acquisitionOut,
     meanRange: [meanMin, meanMax],
     sdRange: [sdMin, sdMax],
     acquisitionRange: [acqMin, acqMax],
@@ -330,6 +384,16 @@ export interface BayesianOptions extends BaseOptions {
   readonly lengthScaleFraction?: number
   /** Exploration nudge passed to Expected Improvement. */
   readonly xi?: number
+  /**
+   * Which acquisition function decides where she goes.
+   *
+   * `ei` by default because it needs no tuning to behave sensibly. Use `ucb`
+   * when the exploration/exploitation balance is the thing being demonstrated —
+   * `kappa` sweeps it end to end, which `xi` cannot.
+   */
+  readonly acquisition?: AcquisitionKind
+  /** Standard deviations of optimism, for `ucb`. 0 exploits, high explores. */
+  readonly kappa?: number
   /** Grid used for both the acquisition search and the rendered layers. */
   readonly resolution?: number
   /** Random points taken before the model is trusted. */
@@ -368,6 +432,8 @@ export function* bayesianOptimization(
     maxSteps = 25,
     lengthScaleFraction = 0.18,
     xi = 0.01,
+    acquisition = 'ei',
+    kappa = 2,
     resolution = 48,
     initialSamples = 4,
     recordModel = true,
@@ -377,6 +443,8 @@ export function* bayesianOptimization(
   const d = surface.domain
   const shortSide = Math.min(d.xMax - d.xMin, d.yMax - d.yMin)
   const lengthScale = shortSide * lengthScaleFraction
+
+  const score = makeAcquisition(acquisition, { xi, kappa })
 
   const observations: GpObservation[] = []
   let best: Individual = { position: { x: 0, y: 0 }, value: -Infinity }
@@ -423,6 +491,7 @@ export function* bayesianOptimization(
     meta: {
       observations: observations.length,
       lengthScale,
+      kappa: acquisition === 'ucb' ? kappa : Number.NaN,
       variance: priorVariance(),
       // How much of the domain she still has no opinion about. Falls toward
       // zero as the cairns accumulate, and is the number the fog is drawn from.
@@ -454,7 +523,7 @@ export function* bayesianOptimization(
         variance: priorVariance(),
         noise: priorVariance() * 1e-6,
       })
-      grid = posteriorGrid(gp, surface, best.value, resolution, xi)
+      grid = posteriorGrid(gp, surface, best.value, resolution, score)
       next = grid.argmax
     }
 
