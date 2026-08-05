@@ -1,18 +1,17 @@
 import {
   SURFACES_BY_NAME,
-  collect,
   createSampledSurface,
   createTrueSurface,
   geneticAlgorithm,
   gradientAscent,
   hillClimber,
   hopDuration,
-  mulberry32,
+  runMultistart,
   simulatedAnnealing,
-  type OptimizerState,
+  type OptimizerFactory,
   type Surface,
 } from '@kangaroos/core'
-import { SearchScene, useRunView } from '@kangaroos/scene'
+import { SearchScene, useMultiRunView } from '@kangaroos/scene'
 import { Canvas } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -30,6 +29,20 @@ export interface SearchFigureProps {
   surface?: string
   algorithm?: AlgorithmName
   seed?: number
+  /**
+   * How many kangaroos to drop, each from a different seed.
+   *
+   * One search shows how an algorithm moves. Several show whether it can be
+   * relied on, which is a different question and usually the more important
+   * one — four runs fanning out to four different summits says more about a
+   * hill climber than any single run of it can.
+   *
+   * Four is where individual colour runs out. More than that still renders,
+   * but as one uniformly coloured crowd — nobody tracks six kangaroos by hue,
+   * so past that point the shape of the swarm is the only readable thing and
+   * the figure may as well say so.
+   */
+  runs?: number
   dataSeed?: number
   /** Learning rate for the raw-gradient variant. */
   rate?: number
@@ -53,34 +66,37 @@ function resolveSurface(spec: string, dataSeed: number): Surface {
   return SURFACES_BY_NAME[spec] ?? SURFACES_BY_NAME.Himmelblau!
 }
 
-function runAlgorithm(
+/**
+ * The algorithm as a factory, so one run and many runs are configured
+ * identically.
+ *
+ * This is what keeps a multistart figure honest: every kangaroo runs the same
+ * algorithm with the same options and differs only in its seed, which is what
+ * makes the spread of outcomes attributable to where she landed rather than to
+ * how she was tuned.
+ */
+function makeFactory(
   name: AlgorithmName,
-  surface: Surface,
-  seed: number,
   opts: { rate?: number; stepDecay?: number },
-): OptimizerState[] {
-  const rng = mulberry32(seed)
+): OptimizerFactory {
   switch (name) {
     case 'gradient-ascent':
-      return collect(
-        gradientAscent(surface, rng, { stepDecay: opts.stepDecay ?? 0.99, maxSteps: 220 }),
-      )
+      return (s, rng) => gradientAscent(s, rng, { stepDecay: opts.stepDecay ?? 0.99, maxSteps: 220 })
     case 'gradient-ascent-raw':
       // The learning-rate figure: hop length tracks slope, as backprop's does.
-      return collect(
-        gradientAscent(surface, rng, {
+      return (s, rng) =>
+        gradientAscent(s, rng, {
           normalize: false,
           stepSize: opts.rate ?? 0.01,
           stepDecay: opts.stepDecay ?? 1,
           maxSteps: 220,
-        }),
-      )
+        })
     case 'annealing':
-      return collect(simulatedAnnealing(surface, rng, { recordProposals: true, maxSteps: 700 }))
+      return (s, rng) => simulatedAnnealing(s, rng, { recordProposals: true, maxSteps: 700 })
     case 'genetic':
-      return collect(geneticAlgorithm(surface, rng, { maxSteps: 70, populationSize: 24 }))
+      return (s, rng) => geneticAlgorithm(s, rng, { maxSteps: 70, populationSize: 24 })
     default:
-      return collect(hillClimber(surface, rng, { recordProposals: true, maxSteps: 220 }))
+      return (s, rng) => hillClimber(s, rng, { recordProposals: true, maxSteps: 220 })
   }
 }
 
@@ -95,6 +111,7 @@ export function SearchFigure({
   surface: surfaceName = 'Himmelblau',
   algorithm = 'hill-climber',
   seed = 1,
+  runs = 1,
   dataSeed = 0,
   rate,
   stepDecay,
@@ -114,6 +131,7 @@ export function SearchFigure({
           surfaceName={surfaceName}
           algorithm={algorithm}
           seed={seed}
+          runs={runs}
           dataSeed={dataSeed}
           rate={rate}
           stepDecay={stepDecay}
@@ -135,6 +153,7 @@ function SearchFigureBody(props: {
   surfaceName: string
   algorithm: AlgorithmName
   seed: number
+  runs: number
   dataSeed: number
   rate?: number
   stepDecay?: number
@@ -150,13 +169,21 @@ function SearchFigureBody(props: {
     () => resolveSurface(props.surfaceName, props.dataSeed),
     [props.surfaceName, props.dataSeed],
   )
-  const states = useMemo(
-    () => runAlgorithm(props.algorithm, surface, props.seed, { rate: props.rate, stepDecay: props.stepDecay }),
-    [props.algorithm, surface, props.seed, props.rate, props.stepDecay],
-  )
-  const view = useRunView(surface, states)
+  const runs = useMemo(() => {
+    const factory = makeFactory(props.algorithm, { rate: props.rate, stepDecay: props.stepDecay })
+    // Seeds run from `seed`, so a figure showing four runs and a figure showing
+    // one both start with the same kangaroo. The single run is the first of the
+    // four rather than a different search entirely, which is what lets one
+    // figure be read as a close-up of another.
+    const seeds = Array.from({ length: Math.max(1, props.runs) }, (_, i) => props.seed + i)
+    return runMultistart(surface, factory, { seeds })
+  }, [props.algorithm, surface, props.seed, props.runs, props.rate, props.stepDecay])
 
-  const total = hopDuration(states.length, props.framesPerStep)
+  const view = useMultiRunView(surface, runs)
+
+  // The longest run owns the clock — ending the animation when the *first*
+  // kangaroo settles would cut away from everyone still climbing.
+  const total = hopDuration(view.path.length, props.framesPerStep)
   const [frame, setFrame] = useState(0)
   const raf = useRef(0)
 

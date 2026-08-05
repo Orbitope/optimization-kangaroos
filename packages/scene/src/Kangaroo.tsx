@@ -1,4 +1,4 @@
-import { CKColor, CKMarker, hexToInt } from '@contentkit/tokens'
+import { CKMarker, hexToInt } from '@contentkit/tokens'
 import { hopPose, type HopOptions, type Vec3 } from '@kangaroos/core'
 import { useGLTF } from '@react-three/drei'
 import {
@@ -168,8 +168,14 @@ function useKangarooGeometry(): THREE.BufferGeometry {
 }
 
 export interface KangarooCrowdProps {
-  /** Start and end of every individual's current hop, in world space. */
-  hops: readonly { from: Vec3; to: Vec3 }[]
+  /**
+   * Start and end of every individual's current hop, in world space.
+   *
+   * `previousHeading` is held when the step has no horizontal extent — an
+   * individual that did not move this generation, or a run that has already
+   * finished. Without it they all pivot to face north the moment they stop.
+   */
+  hops: readonly { from: Vec3; to: Vec3; previousHeading?: number }[]
   t: number
   size?: number
   /** One colour per individual, or a single colour for all. */
@@ -191,7 +197,9 @@ export function KangarooCrowd({
   t,
   size = 0.04,
   colors,
-  color = CKColor.amber,
+  // Not amber: it scores ΔE 4 against the cartographic ramp's uplands, so an
+  // uncoloured crowd would climb straight into camouflage.
+  color = CKMarker.fill,
   hop,
 }: KangarooCrowdProps) {
   const mesh = useRef<THREE.InstancedMesh>(null)
@@ -203,7 +211,7 @@ export function KangarooCrowd({
     if (!m) return
 
     hops.forEach((h, i) => {
-      const pose = hopPose(h.from, h.to, t, hop)
+      const pose = hopPose(h.from, h.to, t, hop, h.previousHeading ?? 0)
       scratch.position.set(pose.position.x, pose.position.y, pose.position.z)
       scratch.rotation.set(0, pose.heading, 0)
       scratch.scale.set(pose.scale.x * size, pose.scale.y * size, pose.scale.z * size)

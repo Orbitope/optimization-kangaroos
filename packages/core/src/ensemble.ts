@@ -17,6 +17,28 @@ export type OptimizerFactory = (
   rng: Rng,
 ) => Generator<OptimizerState, OptimizerState>
 
+/**
+ * The same algorithm from many starting points, keeping every step.
+ *
+ * `runEnsemble` throws the trajectories away and keeps statistics, which is
+ * what a chart wants. A scene wants the opposite: the full path of each run, so
+ * several kangaroos can hop at once. Same seeds, same runs — one summarises and
+ * the other renders.
+ *
+ * Seeded per run rather than sharing one stream, so run 3 is the same run
+ * whether or not runs 0-2 were also drawn. Shared state would make adding a
+ * kangaroo silently change every other kangaroo's path.
+ */
+export function runMultistart(
+  surface: Surface,
+  factory: OptimizerFactory,
+  options: { readonly seeds?: readonly number[]; readonly seedCount?: number } = {},
+): OptimizerState[][] {
+  const seeds = options.seeds ?? Array.from({ length: options.seedCount ?? 5 }, (_, i) => i)
+  if (seeds.length === 0) throw new Error('A multistart needs at least one seed')
+  return seeds.map((seed) => collect(factory(surface, mulberry32(seed))))
+}
+
 export interface RunSummary {
   readonly seed: number
   readonly steps: number

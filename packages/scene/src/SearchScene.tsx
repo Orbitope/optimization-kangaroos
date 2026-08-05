@@ -1,4 +1,4 @@
-import { CKColor, dataSeries, hexToInt } from '@contentkit/tokens'
+import { agentSeries, CKAgentSeries, CKColor, CKMarker, hexToInt } from '@contentkit/tokens'
 import {
   createSceneTransform,
   hopAt,
@@ -17,24 +17,75 @@ import { Kangaroo, KangarooCrowd } from './Kangaroo.js'
 import { SceneLighting, Terrain } from './Terrain.js'
 
 export interface RunView {
+  /**
+   * The lead run, for anything that reads per-step detail — rejected probes,
+   * temperature, gradient magnitude. With several runs on screen only one can
+   * own the readout, and it is the longest, since that is the one still moving
+   * when the others have stopped.
+   */
   readonly states: readonly OptimizerState[]
   readonly transform: SceneTransform
-  /** One world position per state. */
+  /** The lead run's world path. Its length drives the playhead. */
   readonly path: readonly Vec3[]
-  /** Per-state world positions for every population member, when present. */
-  readonly populationPaths: readonly Vec3[][] | null
+  /**
+   * One world path per kangaroo on screen, or null for a lone searcher.
+   *
+   * A genetic algorithm's population and a set of independent runs from
+   * different starts are the same rendering problem — N agents hopping at once,
+   * N trails — so they share one field. What differs is only how they were
+   * produced, which the scene does not need to know.
+   */
+  readonly agentPaths: readonly Vec3[][] | null
+  /**
+   * Resting heading per agent, in radians.
+   *
+   * A run that has finished has `from === to`, and `hopPose` cannot recover a
+   * direction from a zero-length step — so without this every kangaroo that
+   * arrives snaps round to face north, all at different moments, which reads as
+   * a bug. This is the direction of each path's last real move.
+   */
+  readonly restHeadings: readonly number[] | null
+}
+
+function pathsToRestHeadings(paths: readonly Vec3[][]): number[] {
+  return paths.map((p) => {
+    for (let i = p.length - 1; i > 0; i--) {
+      const dx = p[i]!.x - p[i - 1]!.x
+      const dz = p[i]!.z - p[i - 1]!.z
+      if (Math.hypot(dx, dz) > 1e-9) return Math.atan2(dx, dz)
+    }
+    return 0
+  })
 }
 
 /**
- * Precompute everything positional for a run.
+ * Precompute everything positional for one or more runs.
  *
  * Doing this once per run rather than per frame is the difference between a
  * scene that holds 60fps and one that recomputes a few thousand coordinate
  * transforms every time the playhead moves.
+ *
+ * There are three cases and deliberately one hook, because a figure has to
+ * choose between them at render time and React will not allow a conditional
+ * hook:
+ *
+ * - **Several runs.** Independent searches from different starts. One shared
+ *   transform, which is the point — they are searching the same landscape, so
+ *   they must share a vertical scale or their altitudes stop being comparable,
+ *   and comparing where they ended up is the entire reason to show more than
+ *   one. Runs are different lengths, and that is content rather than a wrinkle
+ *   to smooth over: one kangaroo settling at step 40 while another is still
+ *   climbing at step 300 is what "this algorithm is unreliable" looks like.
+ * - **One run with a population.** A genetic algorithm. Same rendering shape,
+ *   different provenance.
+ * - **One lone searcher.** `agentPaths` is null and the scene draws a single
+ *   kangaroo. A crowd of one would be drawn a shade smaller and in the wrong
+ *   colour, which is a silly reason to have a special case, but it is still the
+ *   correct output.
  */
-export function useRunView(
+export function useMultiRunView(
   surface: Surface,
-  states: readonly OptimizerState[],
+  runs: readonly (readonly OptimizerState[])[],
   options: { verticalScale?: number } = {},
 ): RunView {
   const transform = useMemo(
@@ -43,23 +94,58 @@ export function useRunView(
   )
 
   return useMemo(() => {
+    if (runs.length > 1) {
+      const agentPaths = runs.map((r) => statesToWorld(r, transform))
+      // The lead run is the longest, since that is the one still moving when
+      // the others have stopped — it has to own the playhead or the animation
+      // ends while somebody is mid-climb.
+      let lead = 0
+      for (let i = 1; i < agentPaths.length; i++) {
+        if (agentPaths[i]!.length > agentPaths[lead]!.length) lead = i
+      }
+      return {
+        states: runs[lead] ?? [],
+        transform,
+        path: agentPaths[lead] ?? [],
+        agentPaths,
+        restHeadings: pathsToRestHeadings(agentPaths),
+      }
+    }
+
+    const states = runs[0] ?? []
     const path = statesToWorld(states, transform)
 
     const size = states[0]?.population?.length ?? 0
-    let populationPaths: Vec3[][] | null = null
+    let agentPaths: Vec3[][] | null = null
     if (size > 0) {
       // Transposed: one path per individual, so a crowd member's hop is a
       // lookup rather than a search through every generation.
-      populationPaths = Array.from({ length: size }, () => [] as Vec3[])
+      agentPaths = Array.from({ length: size }, () => [] as Vec3[])
       for (const s of states) {
         s.population?.forEach((ind, i) => {
-          populationPaths![i]?.push(transform.toWorld(ind.position.x, ind.position.y, ind.value))
+          agentPaths![i]?.push(transform.toWorld(ind.position.x, ind.position.y, ind.value))
         })
       }
     }
 
-    return { states, transform, path, populationPaths }
-  }, [states, transform])
+    return {
+      states,
+      transform,
+      path,
+      agentPaths,
+      restHeadings: agentPaths ? pathsToRestHeadings(agentPaths) : null,
+    }
+  }, [runs, transform])
+}
+
+/** The single-run case, for callers that never show more than one kangaroo. */
+export function useRunView(
+  surface: Surface,
+  states: readonly OptimizerState[],
+  options: { verticalScale?: number } = {},
+): RunView {
+  const runs = useMemo(() => [states], [states])
+  return useMultiRunView(surface, runs, options)
 }
 
 export interface SearchSceneProps {
@@ -107,24 +193,41 @@ export function SearchScene({
   ramp,
   showTerrain = true,
 }: SearchSceneProps) {
-  const { states, transform, path, populationPaths } = view
+  const { states, transform, path, agentPaths, restHeadings } = view
   const cursor = hopAt(path.length, frame, framesPerStep)
 
   const from = path[cursor.index] ?? { x: 0, y: 0, z: 0 }
   const to = path[cursor.index + 1] ?? from
-  const reveal = path.length < 2 ? 1 : (cursor.index + cursor.t) / (path.length - 1)
+  // Progress in steps, not in fraction-of-the-lead-run. Each agent turns this
+  // into its own reveal below, so a run that ends at step 40 finishes drawing
+  // its trail at step 40 rather than dribbling on until the longest run stops.
+  const elapsed = cursor.index + cursor.t
+  const reveal = path.length < 2 ? 1 : elapsed / (path.length - 1)
 
   const crowdHops = useMemo(() => {
-    if (!populationPaths) return null
-    return populationPaths.map((p) => ({
+    if (!agentPaths) return null
+    return agentPaths.map((p, i) => ({
       from: p[Math.min(cursor.index, p.length - 1)] ?? { x: 0, y: 0, z: 0 },
       to: p[Math.min(cursor.index + 1, p.length - 1)] ?? { x: 0, y: 0, z: 0 },
+      previousHeading: restHeadings?.[i] ?? 0,
     }))
-  }, [populationPaths, cursor.index])
+  }, [agentPaths, restHeadings, cursor.index])
+
+  /**
+   * Whether each agent gets its own colour.
+   *
+   * The threshold is the agent scale's length, and it is a real claim rather
+   * than a convenience: nobody tracks twenty-four kangaroos by hue. Past four,
+   * individual identity is not information the reader can use, so the crowd is
+   * drawn as a crowd — one colour, thinner and dimmer trails — and what reads
+   * instead is the shape of the swarm, which is the point of a population
+   * method anyway.
+   */
+  const distinct = agentPaths !== null && agentPaths.length <= CKAgentSeries.length
 
   const crowdColors = useMemo(
-    () => populationPaths?.map((_, i) => dataSeries(i)) ?? undefined,
-    [populationPaths],
+    () => (distinct ? agentPaths!.map((_, i) => agentSeries(i)) : undefined),
+    [distinct, agentPaths],
   )
 
   const probes = useMemo(() => {
@@ -154,19 +257,17 @@ export function SearchScene({
 
       {showGradients && <GradientField surface={surface} transform={transform} />}
 
-      {showTrail && !populationPaths && (
-        <HopTrail points={path} reveal={reveal} width={trailWidth} />
-      )}
+      {showTrail && !agentPaths && <HopTrail points={path} reveal={reveal} width={trailWidth} />}
       {showTrail &&
-        populationPaths?.map((p, i) => (
+        agentPaths?.map((p, i) => (
           <HopTrail
             key={i}
             points={p}
-            reveal={reveal}
-            color={dataSeries(i)}
-            samplesPerHop={8}
-            width={trailWidth * 0.55}
-            opacity={0.5}
+            reveal={p.length < 2 ? 1 : Math.min(1, elapsed / (p.length - 1))}
+            color={distinct ? agentSeries(i) : CKMarker.fill}
+            samplesPerHop={distinct ? 12 : 8}
+            width={trailWidth * (distinct ? 0.8 : 0.55)}
+            opacity={distinct ? 0.85 : 0.45}
           />
         ))}
 

@@ -75,8 +75,13 @@ export function GradientField({
   )
 
   const scratch = useMemo(() => new THREE.Object3D(), [])
+  // Steel to cyan, not steel to amber. Amber sits ΔE 4 from the terrain's own
+  // uplands on the cartographic ramp — a strong arrow drawn in it disappears
+  // into the hillside it is describing. Cyan clears ΔE 14 across the ramp and
+  // its one weak spot, the snow cap, is where gradients are near zero anyway,
+  // so nothing bright is ever drawn there.
   const weak = useMemo(() => new THREE.Color(CKColor.steel), [])
-  const strong = useMemo(() => new THREE.Color(CKColor.amber), [])
+  const strong = useMemo(() => new THREE.Color('#5FD8F0'), [])
 
   useLayoutEffect(() => {
     const m = mesh.current

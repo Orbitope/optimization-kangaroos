@@ -259,6 +259,26 @@ plants a flag, and reports success.
 This is not a rare edge case. It is the normal outcome.
 
 <div class="wide">
+<SearchFigure
+  client:visible
+  surface="Himmelblau"
+  algorithm="hill-climber"
+  seed={11}
+  runs={4}
+  height={460}
+  caption="The same algorithm, four times, differing only in where the parachute dropped. This landscape has four summits of exactly equal height, and each kangaroo climbs whichever one she woke up nearest to. None of them is wrong. None of them knows about the others."
+/>
+</div>
+
+Four runs, four answers. Nobody made a mistake and nobody can tell they are not
+alone — each kangaroo did the correct thing given what she could feel under her
+feet, and where she ended up was decided by the parachute rather than by the
+climbing.
+
+Run it across thirty starts on a landscape that *does* have one true summit and
+the same thing shows up as a number.
+
+<div class="wide">
 <EnsembleFigure
   client:visible
   surface="Schwefel"
@@ -294,9 +314,10 @@ kangaroo version is more memorable and means the same thing.
   client:visible
   surface="Eggholder"
   algorithm="annealing"
-  seed={5}
+  seed={6}
+  runs={2}
   framesPerStep={3}
-  caption="Wild early, focused late. Watch her abandon perfectly good summits in the first few seconds."
+  caption="Wild early, focused late — watch them abandon perfectly good summits in the first few seconds. One of these two reaches the true highest point on the map. The other sobers up somewhere lower and stays there. Annealing improves the odds; it does not promise anything."
 />
 </div>
 
