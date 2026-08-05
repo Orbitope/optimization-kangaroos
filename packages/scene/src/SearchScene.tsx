@@ -1,14 +1,18 @@
 import { agentSeries, CKAgentSeries, CKColor, CKMarker, hexToInt } from '@contentkit/tokens'
 import {
+  clearCoverage,
+  createCoverage,
   createSceneTransform,
   hopAt,
+  stampCoverage,
   type OptimizerState,
   type SceneTransform,
+  type Coverage,
   type Surface,
   type Vec3,
 } from '@kangaroos/core'
 import { OrbitControls } from '@react-three/drei'
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 
 import { GradientField } from './GradientField.js'
 import { statesToWorld } from './geometry.js'
@@ -164,6 +168,25 @@ export interface SearchSceneProps {
   contours?: number
   /** Named elevation ramp. Omit for the ContentKit default. */
   ramp?: string
+  /**
+   * Hide the terrain except where the searcher has sensed it.
+   *
+   * `radius` is in domain units. `mode` is `trail` for everywhere she has been
+   * or `window` for only what she can sense from where she is standing now.
+   *
+   * Answering the question directly: yes, this works in 3D, and it is the same
+   * numbers as the plan view because coverage lives in the core. What it costs
+   * is one texture sample per pixel. What it costs *conceptually* is that an
+   * orbit camera can now be pointed at ground nobody has surveyed, which is
+   * either the point or a nuisance depending on the figure.
+   */
+  fog?: {
+    readonly radius: number
+    readonly mode?: 'trail' | 'window'
+    readonly strength?: number
+    /** Grid resolution of the coverage buffer. */
+    readonly resolution?: number
+  }
   /** Draw the terrain surface. Off when ghost layers are the subject. */
   showTerrain?: boolean
   wireframe?: boolean
@@ -191,6 +214,7 @@ export function SearchScene({
   wireframe = false,
   orbit = true,
   ramp,
+  fog,
   showTerrain = true,
 }: SearchSceneProps) {
   const { states, transform, path, agentPaths, restHeadings } = view
@@ -230,6 +254,36 @@ export function SearchScene({
     [distinct, agentPaths],
   )
 
+  // Coverage is mutated in place and re-uploaded each frame, so it lives in a
+  // ref rather than in state — putting a 64k buffer through setState once per
+  // frame would re-render the whole tree for a texture the GPU reads directly.
+  const coverage = useRef<Coverage | null>(null)
+  const stampedTo = useRef(-1)
+  const fogResolution = fog?.resolution ?? 192
+
+  if (fog) {
+    if (!coverage.current || coverage.current.size !== fogResolution) {
+      coverage.current = createCoverage(fogResolution)
+      stampedTo.current = -1
+    }
+    const sources = states
+    const mode = fog.mode ?? 'trail'
+    if (mode === 'window') {
+      clearCoverage(coverage.current)
+      const s = sources[Math.min(cursor.index, sources.length - 1)]
+      if (s) stampCoverage(coverage.current, surface, s.position, { radius: fog.radius })
+    } else {
+      if (cursor.index < stampedTo.current) {
+        clearCoverage(coverage.current)
+        stampedTo.current = -1
+      }
+      for (let k = stampedTo.current + 1; k <= cursor.index && k < sources.length; k++) {
+        stampCoverage(coverage.current, surface, sources[k]!.position, { radius: fog.radius })
+      }
+      stampedTo.current = cursor.index
+    }
+  }
+
   const probes = useMemo(() => {
     if (!showProbes) return []
     const proposals = states[cursor.index + 1]?.proposals ?? []
@@ -252,6 +306,8 @@ export function SearchScene({
         wireframe={wireframe}
         contours={contours}
         ramp={ramp}
+        coverage={fog ? (coverage.current ?? undefined) : undefined}
+        fogStrength={fog?.strength ?? 1}
       />
       )}
 

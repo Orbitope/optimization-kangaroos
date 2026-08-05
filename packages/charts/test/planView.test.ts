@@ -3,13 +3,9 @@ import test from 'node:test'
 
 import { SURFACES_BY_NAME, square, type Surface } from '@kangaroos/core'
 
-import {
-  applyFog,
-  coverageFraction,
-  rasteriseSurface,
-  stampCoverage,
-  toPlanPixel,
-} from '../dist/index.js'
+import { createCoverage, stampCoverage } from '@kangaroos/core'
+
+import { applyFog, rasteriseSurface, toPlanPixel } from '../dist/index.js'
 
 /** Node has no canvas, so the raster gets a plain-object ImageData. */
 const makeImageData = (w: number, h: number): ImageData =>
@@ -60,64 +56,20 @@ test('toPlanPixel puts the domain corners in the right screen corners', () => {
   assert.deepEqual(bottomRight, { x: 110, y: 120 })
 })
 
-test('coverage starts dark and only ever brightens', () => {
-  const size = 40
-  const coverage = new Float32Array(size * size)
-  assert.equal(coverageFraction(coverage), 0)
-
-  stampCoverage(coverage, size, bowl, { x: 0, y: 0 }, { radius: 1 })
-  const after1 = coverageFraction(coverage)
-  assert.ok(after1 > 0 && after1 < 1, `covered ${after1}`)
-
-  const snapshot = Float32Array.from(coverage)
-  stampCoverage(coverage, size, bowl, { x: 2, y: 2 }, { radius: 1 })
-  for (let k = 0; k < coverage.length; k++) {
-    assert.ok(coverage[k]! >= snapshot[k]!, `coverage fell at ${k} — she forgot a hillside`)
-  }
-  assert.ok(coverageFraction(coverage) > after1)
-})
-
-test('a stamp is centred where it was asked for', () => {
-  const size = 41
-  const coverage = new Float32Array(size * size)
-  stampCoverage(coverage, size, bowl, { x: 0, y: 0 }, { radius: 1, feather: 0 })
-  // Domain centre is the raster centre.
-  assert.equal(coverage[20 * 41 + 20], 1)
-  assert.equal(coverage[0], 0)
-})
-
-test('a stamp at the edge does not wrap or crash', () => {
-  const size = 32
-  const coverage = new Float32Array(size * size)
-  for (const p of [
-    { x: -4, y: -4 },
-    { x: 4, y: 4 },
-    { x: -4, y: 4 },
-    { x: 40, y: 40 },
-  ]) {
-    stampCoverage(coverage, size, bowl, p, { radius: 1.5 })
-  }
-  assert.ok(coverage.every((v) => v >= 0 && v <= 1))
-  // A corner stamp must not leak to the opposite corner.
-  const c = new Float32Array(size * size)
-  stampCoverage(c, size, bowl, { x: -4, y: -4 }, { radius: 1, feather: 0 })
-  assert.equal(c[0 * size + size - 1], 0, 'wrapped to the far side')
-})
-
 test('fog darkens unseen ground and leaves seen ground alone', () => {
   const size = 24
   const r = rasteriseSurface(bowl, size, makeImageData)
-  const coverage = new Float32Array(size * size)
-  stampCoverage(coverage, size, bowl, { x: 0, y: 0 }, { radius: 1, feather: 0 })
+  const coverage = createCoverage(size)
+  stampCoverage(coverage, bowl, { x: 0, y: 0 }, { radius: 1, feather: 0 })
 
   const out = makeImageData(size, size)
-  applyFog(out, r.image, coverage, { radius: 1 })
+  applyFog(out, r.image, coverage)
 
   const centre = (12 * size + 12) * 4
   assert.equal(out.data[centre], r.image.data[centre], 'fully seen ground must be untouched')
 
   const corner = 0
-  assert.ok(coverage[0] === 0, 'precondition: the corner is unseen')
+  assert.ok(coverage.data[0] === 0, 'precondition: the corner is unseen')
   // Unseen ground goes to the void colour, whatever that is.
   assert.ok(
     Math.abs(out.data[corner]! - 0x11) <= 1 &&
@@ -130,9 +82,9 @@ test('fog darkens unseen ground and leaves seen ground alone', () => {
 test('partial strength leaves unseen ground visible but dimmed', () => {
   const size = 16
   const r = rasteriseSurface(SURFACES_BY_NAME.Himmelblau!, size, makeImageData)
-  const coverage = new Float32Array(size * size)
+  const coverage = createCoverage(size)
   const out = makeImageData(size, size)
-  applyFog(out, r.image, coverage, { radius: 1, strength: 0.5 })
+  applyFog(out, r.image, coverage, { strength: 0.5 })
 
   for (let k = 0; k < size * size; k++) {
     const src = r.image.data[k * 4]!

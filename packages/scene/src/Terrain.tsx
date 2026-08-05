@@ -1,6 +1,6 @@
 import { CKColor, hexToInt } from '@contentkit/tokens'
-import type { SceneTransform, Surface } from '@kangaroos/core'
-import { useEffect, useMemo } from 'react'
+import { coverageToBytes, type Coverage, type SceneTransform, type Surface } from '@kangaroos/core'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 
 import { buildTerrainGeometry, elevationLutLinear } from './geometry.js'
@@ -18,6 +18,19 @@ export interface TerrainProps {
   contourStrength?: number
   /** Named elevation ramp. Omit for the ContentKit default. */
   ramp?: string
+  /**
+   * Fog of war: what the searcher has actually sensed.
+   *
+   * The 3D answer to the same question the plan view asks, and it works for the
+   * same reason — coverage is computed in the core over domain coordinates, so
+   * both renderers are fogging the identical numbers rather than each deciding
+   * separately what "seen" means. Here it arrives as a texture and the terrain
+   * is darkened toward the void in the fragment shader, which costs one sample
+   * per pixel and nothing per frame beyond re-uploading the bytes.
+   */
+  coverage?: Coverage
+  /** How dark unseen ground goes, 0..1. 1 hides it completely. */
+  fogStrength?: number
 }
 
 /**
@@ -35,6 +48,8 @@ export function Terrain({
   contours = 22,
   contourStrength = 0.42,
   ramp,
+  coverage,
+  fogStrength = 1,
 }: TerrainProps) {
   const geometry = useMemo(() => {
     const built = buildTerrainGeometry(surface, transform, resolution, elevationLutLinear(256, ramp))
@@ -49,6 +64,50 @@ export function Terrain({
     g.computeBoundingSphere()
     return g
   }, [surface, transform, resolution, ramp])
+
+  /**
+   * Coverage as a single-channel texture.
+   *
+   * Allocated once per coverage size and rewritten in place, because this
+   * changes every hop and reallocating a texture per frame would churn GPU
+   * memory for no reason. `NearestFilter` on purpose: the coverage grid is
+   * already smooth — the disc is feathered when it is stamped — so bilinear
+   * filtering would only blur an edge that is deliberately soft already.
+   */
+  const fogTexture = useMemo(() => {
+    if (!coverage) return null
+    const t = new THREE.DataTexture(
+      new Uint8Array(coverage.size * coverage.size),
+      coverage.size,
+      coverage.size,
+      THREE.RedFormat,
+      THREE.UnsignedByteType,
+    )
+    t.minFilter = THREE.LinearFilter
+    t.magFilter = THREE.LinearFilter
+    t.needsUpdate = true
+    return t
+  }, [coverage?.size])
+
+  useEffect(() => () => fogTexture?.dispose(), [fogTexture])
+
+  // Uploaded every render rather than on a dirty flag: the caller mutates the
+  // coverage buffer in place, so there is nothing for React to compare and a
+  // memo here would show stale fog.
+  if (fogTexture && coverage) {
+    coverageToBytes(coverage, fogTexture.image.data as Uint8Array)
+    fogTexture.needsUpdate = true
+  }
+
+  const uniforms = useRef({
+    uContours: { value: contours },
+    uContourStrength: { value: contourStrength },
+    uFog: { value: null as THREE.DataTexture | null },
+    uFogStrength: { value: 0 },
+    uVoid: { value: new THREE.Color(CKColor.void) },
+  })
+  uniforms.current.uFog.value = fogTexture
+  uniforms.current.uFogStrength.value = fogTexture ? fogStrength : 0
 
   /**
    * Contours are drawn in the fragment shader rather than extracted as
@@ -67,25 +126,35 @@ export function Terrain({
     })
 
     m.onBeforeCompile = (shader) => {
-      shader.uniforms.uContours = { value: contours }
-      shader.uniforms.uContourStrength = { value: contourStrength }
+      Object.assign(shader.uniforms, uniforms.current)
 
       shader.vertexShader = shader.vertexShader
         .replace(
           '#include <common>',
-          '#include <common>\nattribute float aHeight01;\nvarying float vHeight01;',
+          '#include <common>\nattribute float aHeight01;\nvarying float vHeight01;\nvarying vec2 vFogUv;',
         )
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvHeight01 = aHeight01;')
+        .replace(
+          '#include <begin_vertex>',
+          // Domain maps to XZ in [-1,1] with domain +y at world -z, and the
+          // coverage grid's row 0 is the northern edge — so v runs straight
+          // from z with no flip. Getting this backwards fogs the wrong half of
+          // the map, which looks plausible and is completely wrong.
+          '#include <begin_vertex>\nvHeight01 = aHeight01;\nvFogUv = vec2(position.x, position.z) * 0.5 + 0.5;',
+        )
 
       shader.fragmentShader = shader.fragmentShader
         .replace(
           '#include <common>',
-          '#include <common>\nuniform float uContours;\nuniform float uContourStrength;\nvarying float vHeight01;',
+          '#include <common>\nuniform float uContours;\nuniform float uContourStrength;\nuniform sampler2D uFog;\nuniform float uFogStrength;\nuniform vec3 uVoid;\nvarying float vHeight01;\nvarying vec2 vFogUv;',
         )
         .replace(
           '#include <dithering_fragment>',
           /* glsl */ `
           #include <dithering_fragment>
+          float seen = 1.0;
+          if (uFogStrength > 0.0) {
+            seen = texture2D(uFog, vFogUv).r;
+          }
           if (uContours > 0.0) {
             float bands = vHeight01 * uContours;
             float dist = abs(fract(bands) - 0.5);
@@ -93,16 +162,22 @@ export function Terrain({
             // wherever the terrain is steep and the bands crowd together.
             float w = fwidth(bands);
             float line = smoothstep(0.0, w * 1.2, 0.5 - dist - w * 0.6);
-            gl_FragColor.rgb *= mix(1.0, 1.0 - uContourStrength, line);
+            // Survey lines stop where the survey does — a crisp isoline across
+            // ground she has never walked is the figure asserting something
+            // nobody measured.
+            gl_FragColor.rgb *= mix(1.0, 1.0 - uContourStrength, line * seen);
+          }
+          if (uFogStrength > 0.0) {
+            gl_FragColor.rgb = mix(gl_FragColor.rgb, uVoid, (1.0 - seen) * uFogStrength);
           }
           `,
         )
     }
 
     // Changing onBeforeCompile after first use needs a recompile signal.
-    m.customProgramCacheKey = () => `contours:${contours}:${contourStrength}`
+    m.customProgramCacheKey = () => `contours:${contours}:${contourStrength}:${fogTexture ? 1 : 0}`
     return m
-  }, [contours, contourStrength])
+  }, [contours, contourStrength, fogTexture])
 
   // Three.js does not free GPU buffers on unmount by itself, and an article
   // that swaps surfaces would leak a 65k-vertex mesh every time.

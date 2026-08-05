@@ -53,6 +53,10 @@ export interface SearchFigureProps {
   showProbes?: boolean
   contours?: number
   ramp?: string
+  /** Sight radius as a fraction of the domain's shorter side. Omit for no fog. */
+  fog?: number
+  /** `trail` for everywhere she has been, `window` for only what she senses now. */
+  fogMode?: 'trail' | 'window'
   caption?: string
   /** Loop the run rather than stopping on the last frame. */
   loop?: boolean
@@ -121,6 +125,8 @@ export function SearchFigure({
   showProbes = false,
   contours = 22,
   ramp,
+  fog,
+  fogMode = 'trail',
   caption,
   loop = true,
 }: SearchFigureProps) {
@@ -141,6 +147,8 @@ export function SearchFigure({
           showProbes={showProbes}
           contours={contours}
           ramp={ramp}
+          fog={fog}
+          fogMode={fogMode}
           loop={loop}
         />
       </NearViewport>
@@ -163,6 +171,8 @@ function SearchFigureBody(props: {
   showProbes: boolean
   contours: number
   ramp?: string
+  fog?: number
+  fogMode: 'trail' | 'window'
   loop: boolean
 }) {
   const surface = useMemo(
@@ -218,6 +228,18 @@ function SearchFigureBody(props: {
           showProbes={props.showProbes}
           contours={props.contours}
           ramp={props.ramp}
+          fog={
+            props.fog
+              ? {
+                  radius:
+                    Math.min(
+                      surface.domain.xMax - surface.domain.xMin,
+                      surface.domain.yMax - surface.domain.yMin,
+                    ) * props.fog,
+                  mode: props.fogMode,
+                }
+              : undefined
+          }
         />
       </Canvas>
     </div>

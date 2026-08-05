@@ -16,7 +16,7 @@
  */
 
 import { CKColor, elevationLut, hexToRgb01 } from '@contentkit/tokens'
-import type { Surface, Vec2 } from '@kangaroos/core'
+import type { Coverage, Surface, Vec2 } from '@kangaroos/core'
 
 export interface PlanRaster {
   readonly width: number
@@ -117,102 +117,31 @@ export function toPlanPixel(surface: Surface, p: Vec2, view: Viewport): { x: num
 
 // ── fog of war ─────────────────────────────────────────────────────────────
 
-export interface FogOptions {
-  /** Sight radius in domain units. */
-  readonly radius: number
-  /**
-   * Fraction of the radius over which the edge softens.
-   *
-   * A hard circle reads as a stencil laid over a photograph. A soft edge reads
-   * as the limit of what someone can make out, which is the claim being made.
-   */
-  readonly feather?: number
-  /** How dark unseen ground goes, 0..1. 1 is fully hidden. */
-  readonly strength?: number
-}
-
 /**
- * Coverage accumulated over a run: 0 never seen, 1 fully revealed.
- *
- * Monotone by construction — coverage only ever increases, because she does not
- * forget a hillside on walking away from it. That is what makes this cheap
- * enough to animate: revealing one more position stamps a disc into an existing
- * buffer rather than recomputing a distance field over every visited point.
- */
-export function stampCoverage(
-  coverage: Float32Array,
-  size: number,
-  surface: Surface,
-  p: Vec2,
-  options: FogOptions,
-): void {
-  const d = surface.domain
-  const feather = options.feather ?? 0.45
-  const spanX = d.xMax - d.xMin
-  const spanY = d.yMax - d.yMin
-
-  // Radius in pixels along each axis, since the domain need not be square.
-  const rx = (options.radius / spanX) * (size - 1)
-  const ry = (options.radius / spanY) * (size - 1)
-  const cx = ((p.x - d.xMin) / spanX) * (size - 1)
-  const cy = (1 - (p.y - d.yMin) / spanY) * (size - 1)
-
-  const i0 = Math.max(0, Math.floor(cx - rx))
-  const i1 = Math.min(size - 1, Math.ceil(cx + rx))
-  const j0 = Math.max(0, Math.floor(cy - ry))
-  const j1 = Math.min(size - 1, Math.ceil(cy + ry))
-
-  for (let j = j0; j <= j1; j++) {
-    for (let i = i0; i <= i1; i++) {
-      // Normalised elliptical distance, so the disc is a circle in *domain*
-      // space even when the raster is not square.
-      const dx = (i - cx) / (rx || 1)
-      const dy = (j - cy) / (ry || 1)
-      const r = Math.hypot(dx, dy)
-      if (r > 1) continue
-      const v = feather <= 0 ? 1 : Math.min(1, (1 - r) / feather)
-      const k = j * size + i
-      if (v > coverage[k]!) coverage[k] = v
-    }
-  }
-}
-
-/**
- * Darken an already-blitted raster wherever coverage is low.
+ * Darken an already-rasterised surface wherever coverage is low.
  *
  * Applied to a copy of the terrain image rather than drawn as an overlay
  * rectangle: an alpha overlay would also dim the marks drawn on top, and the
- * cairns and the path have to stay at full strength — they are the record of
- * what she *does* know.
+ * path and the current position have to stay at full strength — they are the
+ * record of what she *does* know.
+ *
+ * The coverage itself lives in the core, so the 2D plate and the 3D terrain
+ * cannot drift apart about what counts as seen.
  */
 export function applyFog(
   target: ImageData,
   source: ImageData,
-  coverage: Float32Array,
-  options: FogOptions,
+  coverage: Coverage,
+  options: { readonly strength?: number } = {},
 ): void {
   const strength = options.strength ?? 1
   const [ur, ug, ub] = hexToRgb01(CKColor.void).map((c) => c * 255)
 
-  for (let k = 0; k < coverage.length; k++) {
-    const seen = coverage[k]!
-    const hidden = (1 - seen) * strength
+  for (let k = 0; k < coverage.data.length; k++) {
+    const hidden = (1 - coverage.data[k]!) * strength
     target.data[k * 4] = source.data[k * 4]! * (1 - hidden) + ur! * hidden
     target.data[k * 4 + 1] = source.data[k * 4 + 1]! * (1 - hidden) + ug! * hidden
     target.data[k * 4 + 2] = source.data[k * 4 + 2]! * (1 - hidden) + ub! * hidden
     target.data[k * 4 + 3] = 255
   }
-}
-
-/**
- * Coverage as a fraction of the domain — how much of the map she has seen.
- *
- * The number that makes a fog figure quantitative rather than atmospheric, and
- * the honest counterweight to a search that looks busy: five hundred hops
- * inside one basin can leave ninety per cent of the world dark.
- */
-export function coverageFraction(coverage: Float32Array): number {
-  let total = 0
-  for (const v of coverage) total += v
-  return total / coverage.length
 }

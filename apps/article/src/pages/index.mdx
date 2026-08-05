@@ -126,16 +126,18 @@ landscape this entire time. She has not.
   surface="Himmelblau"
   algorithm="hill-climber"
   seed={7}
-  steps={220}
-  caption="The same hill climber, from her side. The map is dark except where she has been. The first toggle switches between everywhere she has ever stood and the much smaller patch she can sense from where she is standing right now; the second lets you put the real landscape back for comparison."
+  runs={4}
+  steps={120}
+  caption="Four hill climbers, from their side. Each was dropped somewhere different and none of them knows about the others. The map is dark except where they have been. The first toggle switches between everywhere they have ever stood and the much smaller patch each can sense from where it is standing right now; the second puts the real landscape back for comparison."
 />
 </div>
 
 Two things are worth sitting with here.
 
-The first is the number in the corner. She works hard, and covers almost none
-of the world — a search can look energetic and still have touched a few per
-cent of the map. Nothing about being busy makes it thorough.
+The first is the number in the corner. They work hard — four independent
+searches, hundreds of evaluations between them — and cover almost none of the
+world. A search can look energetic and still have touched a few per cent of the
+map. Nothing about being busy makes it thorough.
 
 The second only shows up on the second toggle. Turn the landscape on and she is
 standing next to something enormous that she has no way of knowing about. Turn
@@ -146,6 +148,25 @@ not. Every judgement she makes is correct given what she can feel; it is the
 This is the honest version of every other figure in this article. The rest are
 drawn our way round because a dark screen teaches nothing — but her way round
 is the true one, and it is worth having seen once.
+
+The same thing works in three dimensions, and it is worth one look because the
+flat map understates it. From above, unseen ground is merely dark. In relief,
+it is *not there* — she is hopping along a thin lit ridge suspended in nothing,
+and the mountain she is on has no visible shape beyond the few metres she has
+walked.
+
+<div class="wide">
+<SearchFigure
+  client:visible
+  surface="Himmelblau"
+  algorithm="hill-climber"
+  seed={7}
+  runs={3}
+  fog={0.1}
+  height={440}
+  caption="Three hill climbers in relief, with the terrain drawn only where they have been. Drag to orbit — the parts of the landscape nobody has walked simply do not exist to look at."
+/>
+</div>
 
 There is an obvious improvement available: stop guessing which way is up, and
 measure it.
@@ -202,6 +223,28 @@ backpropagation world, bowling balls bio-degrade in zero time.
 Every arrow in that figure is a pair of trenches she never dug. The whole field
 is visible to us and invisible to her; she gets one reading, at her own feet,
 and has to commit.
+
+Here is that, with everything she cannot see taken away.
+
+<div class="wide">
+<SightFigure
+  client:visible
+  surface="Schwefel"
+  algorithm="gradient-ascent"
+  seed={2}
+  steps={140}
+  sight={0.07}
+  rate={11}
+  mode="window"
+  showGradient
+  height={480}
+  caption="Gradient ascent with only the two trenches she actually dug. The cyan arrow is the answer the bowling ball gave her — the direction, at her feet, right now. Everything beyond the lit circle is a rumour. Switch to 'everywhere she has been' to see the trail of readings pile up, or turn the landscape on to see what she was walking through."
+/>
+</div>
+
+That single arrow is the entire content of a backpropagation step. Not a plan,
+not a route, not a view of the mountain — one direction, measured where she is
+standing, thrown away as soon as she lands.
 
 </div>
 

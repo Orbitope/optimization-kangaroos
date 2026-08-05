@@ -1,4 +1,4 @@
-import { CKColor, CKMarker, withAlpha } from '@contentkit/tokens'
+import { agentSeries, CKColor, CKMarker, withAlpha } from '@contentkit/tokens'
 import {
   SURFACES_BY_NAME,
   bayesianOptimization,
@@ -7,20 +7,17 @@ import {
   geneticAlgorithm,
   gradientAscent,
   hillClimber,
+  clearCoverage,
+  coverageFraction,
+  createCoverage,
   mulberry32,
   simulatedAnnealing,
+  stampCoverage,
+  type Coverage,
   type OptimizerState,
   type Surface,
 } from '@kangaroos/core'
-import {
-  ChartFrame,
-  applyFog,
-  coverageFraction,
-  rasteriseSurface,
-  stampCoverage,
-  toPlanPixel,
-  type PlanRaster,
-} from '@kangaroos/charts'
+import { ChartFrame, applyFog, rasteriseSurface, toPlanPixel, type PlanRaster } from '@kangaroos/charts'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { NearViewport } from './Figure.js'
@@ -50,6 +47,16 @@ export interface SightFigureProps {
   algorithm?: SightAlgorithm
   seed?: number
   steps?: number
+  /**
+   * How many independent searches to run, each from its own random start.
+   *
+   * One blind run against Bayesian optimization's twenty-five deliberate ones
+   * is not a comparison, it is a handicap. Random multistart is the honest
+   * baseline — it is what you actually do with a cheap local method, and it is
+   * already the thing act three introduces — so the fog figure runs several and
+   * accumulates coverage across all of them.
+   */
+  runs?: number
   /** Sight radius as a fraction of the domain's shorter side. */
   sight?: number
   /** Evaluations per second of playback. */
@@ -119,6 +126,7 @@ export function SightFigure({
   surface: surfaceName = 'Himmelblau',
   algorithm = 'hill-climber',
   seed = 7,
+  runs = 1,
   steps = 220,
   sight = 0.09,
   rate = 14,
@@ -135,6 +143,7 @@ export function SightFigure({
           surfaceName={surfaceName}
           algorithm={algorithm}
           seed={seed}
+          runs={runs}
           steps={steps}
           sight={sight}
           rate={rate}
@@ -156,6 +165,7 @@ function SightFigureBody(props: {
   surfaceName: string
   algorithm: SightAlgorithm
   seed: number
+  runs: number
   steps: number
   sight: number
   rate: number
@@ -168,17 +178,29 @@ function SightFigureBody(props: {
   const [revealed, setRevealed] = useState(props.initialRevealed)
 
   const surface = useMemo(() => resolveSurface(props.surfaceName), [props.surfaceName])
-  const states = useMemo(
-    () => runOf(props.algorithm, surface, props.seed, props.steps),
-    [props.algorithm, surface, props.seed, props.steps],
+  // Seeds run from `seed`, so the single-run figure is the first of the set
+  // rather than a different search entirely.
+  const runs = useMemo(
+    () =>
+      Array.from({ length: Math.max(1, props.runs) }, (_, i) =>
+        runOf(props.algorithm, surface, props.seed + i, props.steps),
+      ),
+    [props.algorithm, surface, props.seed, props.runs, props.steps],
   )
+  // The playhead runs on the longest, so it does not stop while somebody is
+  // still climbing.
+  const longest = useMemo(
+    () => runs.reduce((n, r) => Math.max(n, r.length), 0),
+    [runs],
+  )
+  const totalEvaluations = useMemo(() => runs.reduce((n, r) => n + r.length, 0), [runs])
 
   const d = surface.domain
   const radius = Math.min(d.xMax - d.xMin, d.yMax - d.yMin) * props.sight
 
   const raster = useRef<PlanRaster | null>(null)
   const fogged = useRef<ImageData | null>(null)
-  const coverage = useRef<Float32Array>(new Float32Array(RASTER * RASTER))
+  const coverage = useRef<Coverage>(createCoverage(RASTER))
   // Coverage is accumulated, so it can only be reused while the playhead moves
   // forward. On a loop it has to be rebuilt from the start.
   const stampedTo = useRef(-1)
@@ -186,9 +208,9 @@ function SightFigureBody(props: {
   useEffect(() => {
     raster.current = null
     fogged.current = null
-    coverage.current = new Float32Array(RASTER * RASTER)
+    coverage.current = createCoverage(RASTER)
     stampedTo.current = -1
-  }, [surface, states, mode])
+  }, [surface, runs, mode])
 
   const [index, setIndex] = useState(0)
   const raf = useRef(0)
@@ -200,13 +222,13 @@ function SightFigureBody(props: {
       const delta = last === null ? 0 : Math.max(0, (now - last) / 1000)
       last = now
       t += delta * props.rate
-      if (t > states.length + props.rate * 2) t = 0
-      setIndex(Math.min(states.length - 1, Math.floor(t)))
+      if (t > longest + props.rate * 2) t = 0
+      setIndex(Math.min(longest - 1, Math.floor(t)))
       raf.current = requestAnimationFrame(tick)
     }
     raf.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf.current)
-  }, [props.rate, states.length])
+  }, [props.rate, longest])
 
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, plot: { width: number; height: number }) => {
@@ -221,34 +243,42 @@ function SightFigureBody(props: {
       // ever adds, so it stamps forward from wherever it got to and rebuilds
       // only when the loop wraps.
       if (mode === 'window') {
-        coverage.current.fill(0)
-        stampCoverage(coverage.current, RASTER, surface, states[index]!.position, { radius })
+        clearCoverage(coverage.current)
+        for (const run of runs) {
+          stampCoverage(coverage.current, surface, at(run, index).position, { radius })
+        }
       } else {
         if (index < stampedTo.current) {
-          coverage.current.fill(0)
+          clearCoverage(coverage.current)
           stampedTo.current = -1
         }
         for (let k = stampedTo.current + 1; k <= index; k++) {
-          stampCoverage(coverage.current, RASTER, surface, states[k]!.position, { radius })
+          for (const run of runs) {
+            // A finished run stamps its final position again, which is a no-op
+            // on an already-lit disc — cheaper than tracking which runs are
+            // still going, and it keeps the loop branch-free.
+            stampCoverage(coverage.current, surface, at(run, k).position, { radius })
+          }
         }
         stampedTo.current = index
       }
 
       // Revealed keeps a little fog so the seen region is still legible as a
       // shape; zero would make the toggle look like it does nothing but brighten.
-      applyFog(out, base.image, coverage.current, { radius, strength: revealed ? 0.42 : 1 })
+      applyFog(out, base.image, coverage.current, { strength: revealed ? 0.42 : 1 })
 
       drawSight(ctx, plot.width, plot.height, {
         surface,
-        states,
+        runs,
         index,
         out,
         seen: coverageFraction(coverage.current),
         showGradient: props.showGradient,
         mode,
+        totalEvaluations,
       })
     },
-    [surface, states, index, radius, mode, revealed, props.showGradient],
+    [surface, runs, index, radius, mode, revealed, props.showGradient, totalEvaluations],
   )
 
   const seenNow = coverageFraction(coverage.current)
@@ -289,23 +319,30 @@ function SightFigureBody(props: {
         margin={NO_MARGIN}
         draw={draw}
         description={
-          `A ${ALGORITHM_LABEL[props.algorithm]} searching ${surface.name}, with the map dark ` +
-          `except where she has sensed it. After ${index} of ${states.length - 1} hops she has ` +
-          `covered ${(seenNow * 100).toFixed(0)} per cent of the domain.`
+          `${runs.length === 1 ? 'A' : `${runs.length} independent runs of a`} ` +
+          `${ALGORITHM_LABEL[props.algorithm]} searching ${surface.name}, with the map dark ` +
+          `except where it has been sensed. After ${totalEvaluations} evaluations in total, ` +
+          `${(seenNow * 100).toFixed(0)} per cent of the domain has been covered.`
         }
       />
     </div>
   )
 }
 
+/** A run that has finished holds its last position rather than disappearing. */
+function at(run: readonly OptimizerState[], index: number): OptimizerState {
+  return run[Math.min(index, run.length - 1)]!
+}
+
 interface SightInput {
   surface: Surface
-  states: readonly OptimizerState[]
+  runs: readonly (readonly OptimizerState[])[]
   index: number
   out: ImageData
   seen: number
   showGradient: boolean
   mode: SightMode
+  totalEvaluations: number
 }
 
 const sightScratch =
@@ -317,7 +354,7 @@ function drawSight(
   height: number,
   input: SightInput,
 ): void {
-  const { surface, states, index, out, seen, showGradient, mode } = input
+  const { surface, runs, index, out, seen, showGradient, mode, totalEvaluations } = input
   ctx.clearRect(0, 0, width, height)
 
   const readoutH = 34
@@ -345,20 +382,42 @@ function drawSight(
   // thing that persists — she remembers where she walked even when the ground
   // behind her has gone dark again, which is exactly the distinction between
   // having been somewhere and being able to see it.
-  const pts = states.slice(0, index + 1).map((s) => toPlanPixel(surface, s.position, view))
-  if (pts.length > 1) {
-    ctx.strokeStyle = withAlpha(CKMarker.fill, mode === 'window' ? 0.5 : 0.75)
-    ctx.lineWidth = 1.4
-    ctx.lineJoin = 'round'
-    ctx.beginPath()
-    pts.forEach((p, k) => (k === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)))
-    ctx.stroke()
-  }
+  const solo = runs.length === 1
+  runs.forEach((run, r) => {
+    const upto = Math.min(index, run.length - 1)
+    const pts = run.slice(0, upto + 1).map((s) => toPlanPixel(surface, s.position, view))
+    const colour = solo ? CKMarker.fill : agentSeries(Math.min(r, 3))
 
-  const here = pts[pts.length - 1]
-  if (here) {
+    if (pts.length > 1) {
+      ctx.strokeStyle = withAlpha(colour, mode === 'window' ? 0.5 : 0.75)
+      ctx.lineWidth = 1.4
+      ctx.lineJoin = 'round'
+      ctx.beginPath()
+      pts.forEach((p, k) => (k === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)))
+      ctx.stroke()
+    }
+
+    const p = pts[pts.length - 1]
+    if (!p) return
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, 5.5, 0, Math.PI * 2)
+    ctx.fillStyle = colour
+    ctx.fill()
+    ctx.strokeStyle = CKColor.void
+    ctx.lineWidth = 2
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, 7.5, 0, Math.PI * 2)
+    ctx.strokeStyle = CKColor.textBright
+    ctx.lineWidth = 1
+    ctx.stroke()
+  })
+
+  const lead = runs[0]!
+  const here = toPlanPixel(surface, at(lead, index).position, view)
+  {
     if (showGradient) {
-      const g = surface.gradient(states[index]!.position.x, states[index]!.position.y)
+      const g = surface.gradient(at(lead, index).position.x, at(lead, index).position.y)
       const mag = Math.hypot(g.x, g.y)
       if (mag > 1e-12) {
         // Fixed length. The magnitude is not the point — which way is up is —
@@ -384,20 +443,6 @@ function drawSight(
       }
     }
 
-    // Two-tone ring, because a single tone crosses the ramp's own luminance
-    // somewhere and vanishes exactly there.
-    ctx.beginPath()
-    ctx.arc(here.x, here.y, 5.5, 0, Math.PI * 2)
-    ctx.fillStyle = CKMarker.fill
-    ctx.fill()
-    ctx.strokeStyle = CKColor.void
-    ctx.lineWidth = 2
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.arc(here.x, here.y, 7.5, 0, Math.PI * 2)
-    ctx.strokeStyle = CKColor.textBright
-    ctx.lineWidth = 1
-    ctx.stroke()
   }
 
   ctx.restore()
@@ -412,7 +457,11 @@ function drawSight(
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
   ctx.fillStyle = CKColor.textSecondary
-  ctx.fillText(`hop ${index} of ${states.length - 1}`, view.x, size + 22)
+  const label =
+    runs.length === 1
+      ? `hop ${Math.min(index, runs[0]!.length - 1)} of ${runs[0]!.length - 1}`
+      : `${runs.length} runs, ${totalEvaluations} evaluations`
+  ctx.fillText(label, view.x, size + 22)
   ctx.textAlign = 'right'
   ctx.fillStyle = seen < 0.25 ? CKColor.coralBright : CKColor.textBright
   ctx.fillText(`${(seen * 100).toFixed(0)}% of the map sensed`, view.x + size, size + 22)
