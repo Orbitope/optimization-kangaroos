@@ -151,3 +151,63 @@ pre code { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 }
+
+/* ── figure controls ──────────────────────────────────────────────────────
+   Only the fog-of-war figure is interactive, and only because its whole point
+   is the difference between two views of one run — a reader who cannot flip
+   between them has to hold one in memory while looking at the other. */
+
+.figure-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.figure-controls .control-group {
+  display: inline-flex;
+  border: 1px solid var(--ck-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.figure-controls .control-group button {
+  border: 0;
+  border-radius: 0;
+}
+
+.figure-controls .control-group button + button {
+  border-left: 1px solid var(--ck-border);
+}
+
+.figure-controls button {
+  font: inherit;
+  font-size: 0.82rem;
+  line-height: 1;
+  padding: 0.5rem 0.8rem;
+  color: var(--ck-text-secondary);
+  background: var(--ck-raised);
+  border: 1px solid var(--ck-border);
+  border-radius: 6px;
+  cursor: pointer;
+  /* Colour alone never carries the pressed state — aria-pressed is on the
+     button and the border weight changes too. */
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.figure-controls button:hover {
+  color: var(--ck-text-bright);
+  background: var(--ck-border);
+}
+
+.figure-controls button.is-on {
+  color: var(--ck-void);
+  background: var(--ck-amber);
+  font-weight: 600;
+}
+
+.figure-controls button:focus-visible {
+  outline: 2px solid var(--ck-amber-bright);
+  outline-offset: 2px;
+}

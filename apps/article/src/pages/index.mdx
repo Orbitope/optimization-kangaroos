@@ -8,6 +8,7 @@ import { SearchFigure } from '../components/SearchFigure.tsx'
 import { EnsembleFigure } from '../components/EnsembleFigure.tsx'
 import { BayesianFigure } from '../components/BayesianFigure.tsx'
 import { AcquisitionFigure } from '../components/AcquisitionFigure.tsx'
+import { SightFigure } from '../components/SightFigure.tsx'
 
 <div class="prose masthead">
 
@@ -113,6 +114,38 @@ up somewhere higher than it started.
 Watch the rejected attempts. Most jumps are wasted. She is not being clever;
 she is being persistent, and near the top she spends most of her effort
 discovering that everything around her is lower.
+
+### What she actually sees
+
+Everything above is a lie of presentation. You have been looking at the whole
+landscape this entire time. She has not.
+
+<div class="wide">
+<SightFigure
+  client:visible
+  surface="Himmelblau"
+  algorithm="hill-climber"
+  seed={7}
+  steps={220}
+  caption="The same hill climber, from her side. The map is dark except where she has been. The first toggle switches between everywhere she has ever stood and the much smaller patch she can sense from where she is standing right now; the second lets you put the real landscape back for comparison."
+/>
+</div>
+
+Two things are worth sitting with here.
+
+The first is the number in the corner. She works hard, and covers almost none
+of the world — a search can look energetic and still have touched a few per
+cent of the map. Nothing about being busy makes it thorough.
+
+The second only shows up on the second toggle. Turn the landscape on and she is
+standing next to something enormous that she has no way of knowing about. Turn
+it off again and that mountain simply does not exist, because for her it does
+not. Every judgement she makes is correct given what she can feel; it is the
+*given* that ruins her.
+
+This is the honest version of every other figure in this article. The rest are
+drawn our way round because a dark screen teaches nothing — but her way round
+is the true one, and it is worth having seen once.
 
 There is an obvious improvement available: stop guessing which way is up, and
 measure it.
@@ -417,6 +450,32 @@ good, and then leave — because a blank grey region on the other side of the ma
 *might* be better, and she will never know unless she goes and stands there.
 None of the other kangaroos can do that, because none of them knows what it
 does not know.
+
+### The same map, from her side
+
+Act one ended with a hill climber that took two hundred hops and sensed four
+per cent of the world. Here is this kangaroo doing the same thing, with the
+same controls.
+
+<div class="wide">
+<SightFigure
+  client:visible
+  surface="data:40"
+  algorithm="bayesian"
+  seed={3}
+  steps={24}
+  sight={0.11}
+  rate={2.2}
+  height={480}
+  caption="Twenty-four hops instead of two hundred, and each one lands somewhere she chose rather than somewhere she stumbled. The lit patches are deliberately spread out — that is the model working. Turn the landscape on to see how much of it she got away with never visiting."
+/>
+</div>
+
+The pools of light are the whole difference. The hill climber's coverage is one
+smear, because each hop had to start where the last one ended. These are
+scattered across the map, because she was never obliged to walk — between hops
+she thinks, and thinking is free. She still cannot see the landscape. She has
+simply stopped needing to.
 
 ### How eager should she be to wander?
 
