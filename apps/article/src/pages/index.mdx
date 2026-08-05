@@ -7,6 +7,7 @@ description: "How machine learning actually finds an answer, explained with a ka
 import { SearchFigure } from '../components/SearchFigure.tsx'
 import { EnsembleFigure } from '../components/EnsembleFigure.tsx'
 import { BayesianFigure } from '../components/BayesianFigure.tsx'
+import { AcquisitionFigure } from '../components/AcquisitionFigure.tsx'
 
 <div class="prose masthead">
 
@@ -416,6 +417,55 @@ good, and then leave — because a blank grey region on the other side of the ma
 *might* be better, and she will never know unless she goes and stands there.
 None of the other kangaroos can do that, because none of them knows what it
 does not know.
+
+### How eager should she be to wander?
+
+That question has a number attached, and it is the most interesting dial in the
+whole article, because it is the only one where **both extremes are bad.**
+
+Everywhere else, a setting is either right or it is too much of something. Too
+small a learning rate is slow; too large and she flies off the mountain — but
+"slow" and "broken" are not the same kind of failure. Here the two failures are
+symmetric, and each is the other's cure.
+
+The number is how much credit she gives to *not knowing*. Call it her optimism:
+when she scores a place, she takes what she expects to find there and adds a
+few multiples of how uncertain she is. Nothing else changes.
+
+- **No optimism at all.** She goes wherever her map already says is highest.
+  Her map says it is highest because she has been there. So she goes there
+  again. And again.
+- **Enormous optimism.** She goes wherever she knows least, which is always the
+  place she has been furthest from. She conducts a beautiful survey of a
+  continent and summits nothing.
+
+<div class="wide">
+<AcquisitionFigure
+  client:visible
+  seed={4}
+  steps={24}
+  caption="One parachute drop, four settings of the dial. All four begin with the same four random samples — the hollow rings, identical in every panel — and diverge only once the setting takes over. Crosses are the four true summits. Watch the second panel commit to one basin early, and the fourth cover the whole map and finish worse."
+/>
+</div>
+
+The second and fourth panels are the argument. **κ = 0.5 visits eighteen
+places and finishes at −0.8. κ = 8 visits all twenty-five and finishes at
+−15.7.** The thorough one loses, by a factor of twenty. It maps the terrain beautifully and
+never converts any of it into altitude, because every time it gets near
+something good it notices somewhere it has not been.
+
+And the greedy panel is worse still, in a way that is easy to miss: it looks
+like it has taken four or five samples. It has taken twenty-five. They are
+stacked on top of each other, because with no credit for uncertainty the
+best-looking spot on the map stays the best-looking spot on the map forever.
+Its line on the chart below is flat from the fifth evaluation onward — twenty
+wasted hops.
+
+There is no universally right setting. The best value depends on the landscape,
+which she cannot see, which is the whole problem she was built to solve. This is
+where the honest answer becomes uncomfortable, and it is the same uncomfortable
+answer as the learning rate in act two: you tune it, by trying values and seeing
+what happens.
 
 And this closes a loop. The expensive-to-evaluate thing this method was built
 for is, in practice, training a machine learning model — you cannot afford

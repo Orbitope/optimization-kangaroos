@@ -11,6 +11,7 @@
  */
 
 export * from './scale.js'
+export * from './planView.js'
 export * from './draw.js'
 export * from './Chart.js'
 export * from './ConvergenceChart.js'
