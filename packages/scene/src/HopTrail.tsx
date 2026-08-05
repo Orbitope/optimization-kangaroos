@@ -1,5 +1,5 @@
 import { CKColor, CKMarker } from '@contentkit/tokens'
-import type { Vec3 } from '@kangaroos/core'
+import type { HopOptions, Vec3 } from '@kangaroos/core'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
@@ -19,6 +19,16 @@ export interface HopTrailProps {
   color?: string
   /** Arc samples per hop. Higher is smoother; 16 is already hard to fault. */
   samplesPerHop?: number
+  /**
+   * Arc shape, forwarded to `hopArc`.
+   *
+   * Worth overriding wherever hop length stops carrying meaning. The default
+   * apex is proportional to distance and uncapped, which is exactly right when
+   * the reader is meant to notice that a step was enormous — and wrong for
+   * Bayesian optimization, where every hop is a deliberate cross-map jump and
+   * the resulting arcs tower over the terrain they are supposed to annotate.
+   */
+  hop?: HopOptions
   /** Stroke width in screen pixels. */
   width?: number
   opacity?: number
@@ -43,6 +53,7 @@ export function HopTrail({
   reveal,
   color = CKColor.coral,
   samplesPerHop = 16,
+  hop,
   width = 3,
   opacity = 0.95,
   halo = true,
@@ -50,13 +61,13 @@ export function HopTrail({
   const size = useThree((s) => s.size)
 
   const { geometry, segments } = useMemo(() => {
-    const built = buildTrailGeometry(points, samplesPerHop)
+    const built = buildTrailGeometry(points, samplesPerHop, hop)
     const g = new LineGeometry()
     // setPositions wants a plain array of xyz triples; a zero-length run would
     // produce a geometry with no instances, which renders as nothing.
     g.setPositions(built.positions.length > 0 ? Array.from(built.positions) : [0, 0, 0, 0, 0, 0])
     return { geometry: g, segments: Math.max(0, built.pointCount - 1) }
-  }, [points, samplesPerHop])
+  }, [points, samplesPerHop, hop])
 
   // Normal blending, not additive. Additive was the first attempt and it does
   // guarantee visibility, but bright coral over amber terrain saturates every

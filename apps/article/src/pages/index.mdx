@@ -6,6 +6,7 @@ description: "How machine learning actually finds an answer, explained with a ka
 
 import { SearchFigure } from '../components/SearchFigure.tsx'
 import { EnsembleFigure } from '../components/EnsembleFigure.tsx'
+import { BayesianFigure } from '../components/BayesianFigure.tsx'
 
 <div class="prose masthead">
 
@@ -359,6 +360,68 @@ genetic algorithms, since their faster rate of reproduction more than
 compensates for their shorter hops.
 <cite>Sarle</cite>
 </blockquote>
+
+</div>
+
+<div class="prose">
+
+## Act three and a half: the kangaroo who draws her own map
+
+**This one is not in the email.** Sarle was writing in 1993 and the method
+arrived properly in 1998, so nobody in the thread could have mentioned it. It
+is here because it is the only idea in this article that is different in *kind*
+from everything above, rather than different in degree.
+
+Every kangaroo so far has been cheap and blind. Hundreds of hops, each decided
+from what she can feel under her feet at that instant, and nothing remembered
+except the best spot so far.
+
+This one is expensive and thoughtful. She hops about twenty times in total.
+Between hops she sits down and reconstructs the entire landscape from the
+handful of places she has actually stood — and, crucially, marks how sure she
+is about each part of the reconstruction.
+
+Then she goes wherever the answer to one question is highest: *where might I
+find ground better than the best I have found so far?* Which is not the same as
+"where do I think it is high". A place she is confident is merely average
+scores nothing. A place she knows nothing about scores well, because it might
+be anything.
+
+<div class="wide">
+<BayesianFigure
+  client:visible
+  seed={3}
+  steps={22}
+  caption="Her belief. The ground you are looking at is not the landscape — it is what she thinks the landscape is, rebuilt from scratch after every hop. Grey, featureless ground is where she has no idea, and the contour lines fade out there because there is nothing to draw them from. Pins mark every place she has actually stood; those are the only hard facts in the picture. The ring is where she has decided to go next."
+/>
+</div>
+
+And here is what was actually there the whole time. Same camera, same vertical
+scale, same twenty-two hops drawn on top — the only difference is that this one
+is the real landscape rather than her reconstruction of it.
+
+<div class="wide">
+<BayesianFigure
+  client:visible
+  showTruth
+  seed={3}
+  steps={22}
+  height={400}
+  caption="The truth. Compare the shape near the pins with the shape far from them: where she has stood, her map is nearly right, and where she has not, it is a smooth guess."
+/>
+</div>
+
+Watch her walk away from a summit. She will climb something, confirm it is
+good, and then leave — because a blank grey region on the other side of the map
+*might* be better, and she will never know unless she goes and stands there.
+None of the other kangaroos can do that, because none of them knows what it
+does not know.
+
+And this closes a loop. The expensive-to-evaluate thing this method was built
+for is, in practice, training a machine learning model — you cannot afford
+thousands of attempts when each one takes a day. So the honest answer to "how
+do you pick the learning rate from Act two?" is that you optimize that too,
+with this. The kangaroo ends up searching for a kangaroo.
 
 </div>
 

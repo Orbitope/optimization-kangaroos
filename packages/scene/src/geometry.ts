@@ -11,6 +11,7 @@ import {
   hopArc,
   sampleGradientGrid,
   sampleHeightGrid,
+  type HopOptions,
   type OptimizerState,
   type SceneTransform,
   type Surface,
@@ -278,6 +279,7 @@ export function statesToWorld(
 export function buildTrailGeometry(
   points: readonly Vec3[],
   samplesPerHop = 16,
+  hop: HopOptions = {},
 ): TrailGeometry {
   if (points.length < 2) {
     return { positions: new Float32Array(0), progress: new Float32Array(0), pointCount: 0 }
@@ -293,7 +295,7 @@ export function buildTrailGeometry(
 
   let w = 0
   for (let h = 0; h < hops; h++) {
-    const arc = hopArc(points[h]!, points[h + 1]!, samplesPerHop)
+    const arc = hopArc(points[h]!, points[h + 1]!, samplesPerHop, hop)
     for (let s = h === 0 ? 0 : 1; s < arc.length; s++) {
       const p = arc[s]!
       positions[w * 3] = p.x
@@ -387,4 +389,121 @@ export function buildArrowField(
   }
 
   return { positions, headings, strengths, count }
+}
+
+// ── the belief surface ─────────────────────────────────────────────────────
+
+export interface BeliefGeometry extends TerrainGeometry {
+  /** Uncertainty normalized to 0..1, per vertex. Drives the fog in the shader. */
+  readonly uncertainty: Float32Array
+}
+
+/**
+ * The landscape as she believes it to be, with her doubt drawn into it.
+ *
+ * The posterior mean *is* the terrain here — she is standing on her own model,
+ * which is the honest picture: a Bayesian searcher does not consult a map, she
+ * acts as though her belief were the ground.
+ *
+ * Uncertainty desaturates and darkens rather than being drawn as a separate
+ * translucent layer over the top. Stacking a heat sheet on terrain was tried
+ * for the training-data act and was genuinely horrible — transparency has an
+ * ordering problem with no good answer, and the middle of the frame turns to
+ * mud. Draining the colour instead gives an opaque surface that sorts for free
+ * and reads immediately: vivid topographic ground is where she has been, grey
+ * featureless ground is where she has not. Elevation still comes through as
+ * lightness, so the belief surface never stops looking like terrain.
+ *
+ * That leaves the two axes she is actually trading off legible at a glance and
+ * distinguishable from each other, which was the hard part of this figure:
+ * height is what she expects, greyness is what she does not know.
+ */
+export function buildBeliefGeometry(
+  grid: {
+    readonly resolution: number
+    readonly mean: Float64Array
+    readonly sd: Float64Array
+    readonly meanRange: readonly [number, number]
+    readonly sdRange: readonly [number, number]
+  },
+  surface: Surface,
+  transform: SceneTransform,
+  lut: Float32Array = elevationLutLinear(),
+  options: { readonly fogStrength?: number } = {},
+): BeliefGeometry {
+  const n = grid.resolution
+  assertGridResolution(n)
+  const lutSize = lut.length / 3
+  const fogStrength = options.fogStrength ?? 0.85
+
+  const positions = new Float32Array(n * n * 3)
+  const normals = new Float32Array(n * n * 3)
+  const colors = new Float32Array(n * n * 3)
+  const heights01 = new Float32Array(n * n)
+  const uncertainty = new Float32Array(n * n)
+
+  const { xMin, xMax, yMin, yMax } = surface.domain
+  // Normalised against the *prior* rather than against this frame's maximum.
+  // Per-frame normalisation would rescale the fog every step, so the moment she
+  // resolved her last blank region the remaining doubt would bloom back to full
+  // opacity — the fog would appear not to clear at all.
+  const sdCeiling = Math.max(grid.sdRange[1], 1e-12)
+
+  for (let j = 0; j < n; j++) {
+    const y = yMin + ((yMax - yMin) * j) / (n - 1)
+    for (let i = 0; i < n; i++) {
+      const x = xMin + ((xMax - xMin) * i) / (n - 1)
+      const k = j * n + i
+      const raw = grid.mean[k]!
+      const h = Number.isFinite(raw) ? raw : grid.meanRange[0]
+
+      const p = transform.toWorld(x, y, h)
+      positions[k * 3] = p.x
+      positions[k * 3 + 1] = p.y
+      positions[k * 3 + 2] = p.z
+
+      // Central differences on the belief grid — she has no analytic gradient
+      // of her own model, and does not need one: this is the bowling ball,
+      // measured on the map she drew.
+      const left = grid.mean[j * n + Math.max(0, i - 1)]!
+      const right = grid.mean[j * n + Math.min(n - 1, i + 1)]!
+      const down = grid.mean[Math.max(0, j - 1) * n + i]!
+      const up = grid.mean[Math.min(n - 1, j + 1) * n + i]!
+      const dx = ((right - left) / 2) * (n - 1) / (xMax - xMin)
+      const dy = ((up - down) / 2) * (n - 1) / (yMax - yMin)
+      const nv = transform.normalFromGradient({ x: dx, y: dy })
+      normals[k * 3] = nv.x
+      normals[k * 3 + 1] = nv.y
+      normals[k * 3 + 2] = nv.z
+
+      const t = Math.min(1, Math.max(0, transform.normalizeHeight(h)))
+      heights01[k] = t
+      const u = Math.min(1, Math.max(0, grid.sd[k]! / sdCeiling))
+      uncertainty[k] = u
+
+      const bucket = Math.min(lutSize - 1, Math.round(t * (lutSize - 1)))
+      const r = lut[bucket * 3]!
+      const g = lut[bucket * 3 + 1]!
+      const b = lut[bucket * 3 + 2]!
+      // Toward the surface's own luminance, so fogged ground goes grey rather
+      // than toward white — which would read as snow, the one thing on this
+      // ramp that already means something else.
+      const grey = 0.2126 * r + 0.7152 * g + 0.0722 * b
+      const mix = u * fogStrength
+      const dim = 1 - 0.45 * mix
+      colors[k * 3] = (r + (grey - r) * mix) * dim
+      colors[k * 3 + 1] = (g + (grey - g) * mix) * dim
+      colors[k * 3 + 2] = (b + (grey - b) * mix) * dim
+    }
+  }
+
+  return {
+    positions,
+    normals,
+    colors,
+    indices: buildGridIndices(n),
+    heights01,
+    uncertainty,
+    resolution: n,
+  }
 }
