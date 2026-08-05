@@ -159,6 +159,7 @@ backpropagation world, bowling balls bio-degrade in zero time.
   algorithm="gradient-ascent"
   seed={2}
   showGradients
+  contours={12}
   caption="Arrows show which way the ball would roll, everywhere at once. She only ever measures the one she is standing on."
 />
 </div>
@@ -315,9 +316,10 @@ kangaroo version is more memorable and means the same thing.
   surface="Eggholder"
   algorithm="annealing"
   seed={6}
-  runs={2}
+  runs={3}
   framesPerStep={3}
-  caption="Wild early, focused late — watch them abandon perfectly good summits in the first few seconds. One of these two reaches the true highest point on the map. The other sobers up somewhere lower and stays there. Annealing improves the odds; it does not promise anything."
+  contours={9}
+  caption="Wild early, focused late — watch them abandon perfectly good summits in the first few seconds. One of these three reaches the true highest point on the map; the other two sober up somewhere lower and stay there. Annealing improves the odds. It does not promise anything."
 />
 </div>
 
@@ -344,6 +346,7 @@ repeat.
   algorithm="genetic"
   seed={1}
   framesPerStep={9}
+  contours={8}
   caption="A population on a landscape that is almost flat except for one spike. A single kangaroo would wander it forever."
 />
 </div>
