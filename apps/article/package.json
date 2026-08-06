@@ -9,7 +9,10 @@
     "prebuild": "npm --prefix ../.. run build:libs",
     "build": "astro build",
     "preview": "astro preview --host 127.0.0.1",
-    "typecheck": "astro check --minimumSeverity error"
+    "typecheck": "astro check --minimumSeverity error",
+    "build:pages": "ARTICLE_BASE=${ARTICLE_BASE:-/optimization-kangaroos/} ARTICLE_SITE=${ARTICLE_SITE:-https://mwburke.github.io} astro build",
+    "prebuild:pages": "npm --prefix ../.. run build:libs",
+    "preview:pages": "npm run build:pages && astro preview --host 127.0.0.1"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.0",

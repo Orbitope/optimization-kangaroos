@@ -17,7 +17,8 @@
     "dev": "npm run dev -w @kangaroos/scene",
     "preinstall": "node tools/check-sibling.mjs",
     "check:layout": "node tools/check-sibling.mjs",
-    "dev:article": "npm run dev -w @kangaroos/article"
+    "dev:article": "npm run dev -w @kangaroos/article",
+    "build:pages": "npm run build:pages -w @kangaroos/article"
   },
   "engines": {
     "node": ">=22.6"

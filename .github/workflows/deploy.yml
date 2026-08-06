@@ -1,0 +1,96 @@
+name: Deploy article
+
+# Manual only, like CI, and for the same reason: publishing on every push to a
+# branch that gets thirty commits while a figure is iterated on would mean
+# thirty deploys nobody asked for. This fires when the article is ready to be
+# looked at.
+#
+# One-time repository setup: Settings → Pages → Source → "GitHub Actions".
+# Without that the deploy step fails with a 404 on the Pages API, which is not
+# an obvious error message.
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: 'Base path the site is served from (keep the trailing slash)'
+        required: false
+        default: '/optimization-kangaroos/'
+      site:
+        description: 'Origin the site is served from, for canonical URLs'
+        required: false
+        default: 'https://mwburke.github.io'
+      contentkit-ref:
+        description: 'Branch of Orbitope/contentkit to build the tokens from'
+        required: false
+        default: 'claude/email-tool-article-video-8bba08'
+
+# Reading the repository, minting the OIDC token deploy-pages authenticates
+# with, and writing the Pages deployment. Nothing else.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and a newer run wins. `cancel-in-progress: false`
+# would leave two builds racing to publish, and the loser could land last.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Both repos, as siblings. @contentkit/tokens is consumed by relative
+      # path rather than from a registry, so the layout is load-bearing —
+      # tools/check-sibling.mjs runs on preinstall and will stop the build here
+      # with a readable message rather than an ENOENT if this ever drifts.
+      - uses: actions/checkout@v4
+        with:
+          path: optimization-kangaroos
+
+      - uses: actions/checkout@v4
+        with:
+          repository: Orbitope/contentkit
+          ref: ${{ inputs.contentkit-ref }}
+          path: contentkit
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install @contentkit/tokens
+        working-directory: contentkit/web~/packages/tokens
+        run: npm install --no-audit --no-fund
+
+      - name: Install
+        working-directory: optimization-kangaroos
+        run: npm install --no-audit --no-fund
+
+      # The suites are fast and a broken figure is worse than a late one. This
+      # is also the only place both repos are guaranteed to be at the refs
+      # being published, which is exactly the drift the tokens test exists for.
+      - name: Test
+        working-directory: optimization-kangaroos
+        run: npm test --workspaces --if-present
+
+      - name: Build
+        working-directory: optimization-kangaroos
+        env:
+          ARTICLE_BASE: ${{ inputs.base }}
+          ARTICLE_SITE: ${{ inputs.site }}
+        run: npm run build:pages
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: optimization-kangaroos/apps/article/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
