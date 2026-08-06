@@ -29,8 +29,10 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Build and test @contentkit/tokens
-        working-directory: contentkit/web~/packages/tokens
+      # The whole web workspace, not just the tokens: @contentkit/sequence
+      # landed alongside it and its drift guard parses the C# the same way.
+      - name: Build and test the ContentKit web packages
+        working-directory: contentkit/web~
         run: npm install --no-audit --no-fund && npm test
 
       - name: Install optimization-kangaroos

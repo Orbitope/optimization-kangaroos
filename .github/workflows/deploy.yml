@@ -59,8 +59,8 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install @contentkit/tokens
-        working-directory: contentkit/web~/packages/tokens
+      - name: Install the ContentKit web packages
+        working-directory: contentkit/web~
         run: npm install --no-audit --no-fund
 
       - name: Install
