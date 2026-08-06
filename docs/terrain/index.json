@@ -1,0 +1,114 @@
+[
+  {
+    "name": "australia",
+    "title": "Australia",
+    "file": "australia.dem",
+    "bounds": {
+      "west": 112,
+      "east": 154,
+      "south": -44,
+      "north": -10
+    },
+    "size": 256,
+    "zoom": 6,
+    "minHeight": -7130,
+    "maxHeight": 2256,
+    "metresPerSample": 16273
+  },
+  {
+    "name": "chapel-hill",
+    "title": "Chapel Hill, North Carolina",
+    "file": "chapel-hill.dem",
+    "bounds": {
+      "west": -79.18889849619848,
+      "east": -78.92270150380153,
+      "south": 35.80467539204515,
+      "north": 36.02172460795486
+    },
+    "size": 256,
+    "zoom": 12,
+    "minHeight": 64,
+    "maxHeight": 237,
+    "metresPerSample": 94
+  },
+  {
+    "name": "everest",
+    "title": "Everest",
+    "file": "everest.dem",
+    "bounds": {
+      "west": 86.8232711987185,
+      "east": 87.0267288012815,
+      "south": 27.897662826704288,
+      "north": 28.07853717329571
+    },
+    "size": 256,
+    "zoom": 12,
+    "minHeight": 4405,
+    "maxHeight": 8749,
+    "metresPerSample": 78
+  },
+  {
+    "name": "himalaya",
+    "title": "The Himalaya and the Karakoram",
+    "file": "himalaya.dem",
+    "bounds": {
+      "west": 74,
+      "east": 89.5,
+      "south": 26,
+      "north": 37.5
+    },
+    "size": 256,
+    "zoom": 7,
+    "minHeight": 32,
+    "maxHeight": 7285,
+    "metresPerSample": 5731
+  },
+  {
+    "name": "indian-ocean",
+    "title": "The Indian Ocean",
+    "file": "indian-ocean.dem",
+    "bounds": {
+      "west": 68,
+      "east": 89,
+      "south": -21,
+      "north": -1
+    },
+    "size": 256,
+    "zoom": 6,
+    "minHeight": -6251,
+    "maxHeight": 20,
+    "metresPerSample": 8964
+  },
+  {
+    "name": "k2",
+    "title": "K2",
+    "file": "k2.dem",
+    "bounds": {
+      "west": 76.40242997477775,
+      "east": 76.62417002522226,
+      "south": 35.79036282670429,
+      "north": 35.97123717329571
+    },
+    "size": 256,
+    "zoom": 12,
+    "minHeight": 3993,
+    "maxHeight": 8558,
+    "metresPerSample": 78
+  },
+  {
+    "name": "world",
+    "title": "Earth",
+    "file": "world.dem",
+    "bounds": {
+      "west": -180,
+      "east": 180,
+      "south": -85,
+      "north": 85
+    },
+    "size": 512,
+    "zoom": 4,
+    "minHeight": -9375,
+    "maxHeight": 6088,
+    "metresPerSample": 78272
+  }
+]

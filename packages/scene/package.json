@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "React Three Fiber components for the 3D kangaroo search view.",
   "license": "MIT",
-  "author": "mwburke",
+  "author": "Orbitope",
   "type": "module",
   "exports": {
     ".": {

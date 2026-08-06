@@ -10,9 +10,11 @@
     "build": "astro build",
     "preview": "astro preview --host 127.0.0.1",
     "typecheck": "astro check --minimumSeverity error",
-    "build:pages": "ARTICLE_BASE=${ARTICLE_BASE:-/optimization-kangaroos/} ARTICLE_SITE=${ARTICLE_SITE:-https://mwburke.github.io} astro build",
+    "build:pages": "ARTICLE_BASE=${ARTICLE_BASE:-/optimization-kangaroos/} ARTICLE_SITE=${ARTICLE_SITE:-https://orbitope.github.io} astro build",
     "prebuild:pages": "npm --prefix ../.. run build:libs",
-    "preview:pages": "npm run build:pages && astro preview --host 127.0.0.1"
+    "preview:pages": "npm run build:pages && ARTICLE_BASE=${ARTICLE_BASE:-/optimization-kangaroos/} astro preview --host 127.0.0.1",
+    "prebuild:docs": "npm --prefix ../.. run build:libs",
+    "build:docs": "npm run build:pages && node ../../tools/publish-docs.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.0",

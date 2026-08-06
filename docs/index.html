@@ -1,0 +1,334 @@
+<!DOCTYPE html><html lang="en"> <head><!--
+      Orbitope GA4. In the layout rather than in the built index.html, because
+      Astro generates that file and anything written into it is destroyed by the
+      next `npm run build` — and `dist/` is gitignored, so the edit would not
+      even survive a clone. Here it is emitted into every page the site ever
+      grows, which is what "each index.html" means for a generated site.
+    --><script async src="https://www.googletagmanager.com/gtag/js?id=G-KG3409EZDQ"></script><script>
+      window.dataLayer = window.dataLayer || []
+      function gtag() {
+        dataLayer.push(arguments)
+      }
+      gtag('js', new Date())
+      gtag('config', 'G-KG3409EZDQ')
+    </script><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title></title><meta name="description"><!--
+      No Google Fonts link. The two faces are subset and served from this
+      origin — see `tools/fetch-fonts.mjs` and `src/styles/fonts.css`. The
+      landing page loads them from the CDN; a 2500-word article should not
+      have its typeface depend on a third party being reachable.
+    --><link rel="stylesheet" href="/optimization-kangaroos/_astro/index.CQyY6Noo.css"></head> <body> <main><div class="prose masthead"><p class="kicker">Numerical optimization, with kangaroos</p><h1 id="kangaroos-and-training-neural-networks">Kangaroos and Training Neural Networks</h1><p class="standfirst"><p>In 1993 a statistician tried to explain how machine learning finds an answer,
+and reached for a kangaroo. Three decades later it is still the best
+explanation anyone has written. Here it is, with the mountains rendered.</p></p></div>
+<div class="prose"><p>Somewhere in a machine learning system there are numbers that can be turned,
+like dials. Nobody sets them by hand. The machine finds them by trying
+something, seeing how wrong it was, adjusting, and trying again — a few million
+times.</p><p>That process has a name, <em>numerical optimization</em>, and a reputation for being
+impenetrable. It is not. It is a kangaroo looking for a mountain.</p><blockquote><p>Training a NN is a form of numerical optimization, which can be likened to a
+kangaroo searching for the top of Mt. Everest. Everest is the <em>global optimum</em>,
+the highest mountain in the world, but the top of any other really tall
+mountain such as K2 (a good <em>local optimum</em>) would be satisfactory. On the
+other hand, the top of a small hill like Chapel Hill, NC, (a bad local optimum)
+would not be acceptable.
+<cite>Warren S. Sarle, comp.ai.neural-nets, 1993</cite></p></blockquote><p>Here is the mountain he means. This one is not a metaphor and not a drawing —
+it is twenty kilometres of the Khumbu, sampled every seventy-eight metres from
+public elevation data, with Everest in the middle.</p><div class="wide"><style>astro-island,astro-slot,astro-static-slot{display:contents}</style><script>(()=>{var a=(s,i,o)=>{let r=async()=>{await(await s())()},t=typeof i.value=="object"?i.value:void 0,c={rootMargin:t==null?void 0:t.rootMargin},n=new IntersectionObserver(e=>{for(let l of e)if(l.isIntersecting){n.disconnect(),r();break}},c);for(let e of o.children)n.observe(e)};(self.Astro||(self.Astro={})).visible=a;window.dispatchEvent(new Event("astro:visible"));})();</script><script>(()=>{var A=Object.defineProperty;var g=(i,o,a)=>o in i?A(i,o,{enumerable:!0,configurable:!0,writable:!0,value:a}):i[o]=a;var d=(i,o,a)=>g(i,typeof o!="symbol"?o+"":o,a);{let i={0:t=>m(t),1:t=>a(t),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(a(t)),5:t=>new Set(a(t)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(t),9:t=>new Uint16Array(t),10:t=>new Uint32Array(t),11:t=>1/0*t},o=t=>{let[l,e]=t;return l in i?i[l](e):void 0},a=t=>t.map(o),m=t=>typeof t!="object"||t===null?t:Object.fromEntries(Object.entries(t).map(([l,e])=>[l,o(e)]));class y extends HTMLElement{constructor(){super(...arguments);d(this,"Component");d(this,"hydrator");d(this,"hydrate",async()=>{var b;if(!this.hydrator||!this.isConnected)return;let e=(b=this.parentElement)==null?void 0:b.closest("astro-island[ssr]");if(e){e.addEventListener("astro:hydrate",this.hydrate,{once:!0});return}let c=this.querySelectorAll("astro-slot"),n={},h=this.querySelectorAll("template[data-astro-template]");for(let r of h){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(let r of c){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("name")||"default"]=r.innerHTML)}let p;try{p=this.hasAttribute("props")?m(JSON.parse(this.getAttribute("props"))):{}}catch(r){let s=this.getAttribute("component-url")||"<unknown>",v=this.getAttribute("component-export");throw v&&(s+=` (export ${v})`),console.error(`[hydrate] Error parsing props for component ${s}`,this.getAttribute("props"),r),r}let u;await this.hydrator(this)(this.Component,p,n,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),this.dispatchEvent(new CustomEvent("astro:hydrate"))});d(this,"unmount",()=>{this.isConnected||this.dispatchEvent(new CustomEvent("astro:unmount"))})}disconnectedCallback(){document.removeEventListener("astro:after-swap",this.unmount),document.addEventListener("astro:after-swap",this.unmount,{once:!0})}connectedCallback(){if(!this.hasAttribute("await-children")||document.readyState==="interactive"||document.readyState==="complete")this.childrenConnectedCallback();else{let e=()=>{document.removeEventListener("DOMContentLoaded",e),c.disconnect(),this.childrenConnectedCallback()},c=new MutationObserver(()=>{var n;((n=this.lastChild)==null?void 0:n.nodeType)===Node.COMMENT_NODE&&this.lastChild.nodeValue==="astro:end"&&(this.lastChild.remove(),e())});c.observe(this,{childList:!0}),document.addEventListener("DOMContentLoaded",e)}}async childrenConnectedCallback(){let e=this.getAttribute("before-hydration-url");e&&await import(e),this.start()}async start(){let e=JSON.parse(this.getAttribute("opts")),c=this.getAttribute("client");if(Astro[c]===void 0){window.addEventListener(`astro:${c}`,()=>this.start(),{once:!0});return}try{await Astro[c](async()=>{let n=this.getAttribute("renderer-url"),[h,{default:p}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),u=this.getAttribute("component-export")||"default";if(!u.includes("."))this.Component=h[u];else{this.Component=h;for(let f of u.split("."))this.Component=this.Component[f]}return this.hydrator=p,this.hydrate},e,this)}catch(n){console.error(`[astro-island] Error hydrating ${this.getAttribute("component-url")}`,n)}}attributeChangedCallback(){this.hydrate()}}d(y,"observedAttributes",["props"]),customElements.get("astro-island")||customElements.define("astro-island",y)}})();</script><astro-island uid="ZB7Tnc" prefix="r23" component-url="/optimization-kangaroos/_astro/SearchFigure.-jiiD0qh.js" component-export="SearchFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;dem:everest&quot;],&quot;algorithm&quot;:[0,&quot;hill-climber&quot;],&quot;seed&quot;:[0,11],&quot;startX&quot;:[0,-6200],&quot;startY&quot;:[0,-4800],&quot;maxSteps&quot;:[0,1],&quot;contours&quot;:[0,16],&quot;caption&quot;:[0,&quot;Everest and its neighbours, from real elevation data. Drag to orbit.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SearchFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:420px"></div><figcaption class="figure-caption">Everest and its neighbours, from real elevation data. Drag to orbit.</figcaption></figure><!--astro:end--></astro-island></div><p>Worth one aside, because it is the whole article in miniature. Everest is
+8,849 metres. The highest point in that data is 8,749 — a hundred metres short,
+and it stays short however finely you sample it. The surveyed number comes from
+people standing on the summit with satellite receivers. This comes from radar
+looking down at a snow-covered pyramid from orbit, onto a grid that has no
+sample exactly on the peak, and a grid cannot hold a point it never measured.</p><p>Nothing in the rest of this piece is stranger than that. Every landscape a
+machine climbs is a sampled one, and it is always a little lower and a little
+smoother than the thing it stands for. Hold onto it; we come back to it at the
+end.</p><h2 id="the-map">The map</h2><p>Two things need translating before the kangaroo can start.</p><p><strong>The compass is the dials.</strong> North–south is one number the machine can turn;
+east–west is another. Every position on the map is one particular setting of
+those two dials.</p><p><strong>Altitude is how well it is doing.</strong> High ground is a good answer, low ground
+is a bad one. Sarle put it the other way round — machine learning people
+measure <em>error</em>, so they talk about descending into valleys — but multiply by
+minus one and it is the same landscape. Uphill is better. That is all you need.</p><p>Two dials, of course, is a lie of convenience. A real system has millions, and
+the landscape has millions of directions rather than four. Nobody can picture
+that, including the people who work on it every day, and the two-dial version
+is what they picture instead.</p><div class="wide"><astro-island uid="1oWK19" prefix="r24" component-url="/optimization-kangaroos/_astro/SearchFigure.-jiiD0qh.js" component-export="SearchFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;Himmelblau&quot;],&quot;algorithm&quot;:[0,&quot;hill-climber&quot;],&quot;seed&quot;:[0,3],&quot;startX&quot;:[0,0.2],&quot;startY&quot;:[0,-1.6],&quot;trailWidth&quot;:[0,2],&quot;showProbes&quot;:[0,true],&quot;caption&quot;:[0,&quot;A kangaroo on a landscape. She cannot see it — the view is ours, not hers. Drag to orbit.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SearchFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:420px"></div><figcaption class="figure-caption">A kangaroo on a landscape. She cannot see it — the view is ours, not hers. Drag to orbit.</figcaption></figure><!--astro:end--></astro-island></div><p>Now the hard part, which is the part everyone skips.</p><blockquote><p>Initial weights are usually chosen randomly, which means that the kangaroo is
+dropped by parachute somewhere over Asia by a pilot who has lost the map.
+<cite>Sarle</cite></p></blockquote><p>She does not get to pick where she starts. She does not know where Everest is —
+if anybody knew, there would be no need to search. And she cannot see the
+landscape you are looking at. She can only feel the ground under her feet.</p><p>Everything that follows is a different answer to one question: <strong>given that,
+which way should she jump?</strong></p></div>
+<div class="prose"><h2 id="act-one-feeling-around">Act one: feeling around</h2><p>The simplest possible answer. Jump somewhere nearby at random. If the new spot
+is higher, stay. If it is lower, go back and try a different direction.</p><p>That is a <em>hill climber</em>, and it works, in the narrow sense that it always ends
+up somewhere higher than it started.</p><div class="wide"><astro-island uid="Zvf491" prefix="r25" component-url="/optimization-kangaroos/_astro/SearchFigure.-jiiD0qh.js" component-export="SearchFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;Himmelblau&quot;],&quot;algorithm&quot;:[0,&quot;hill-climber&quot;],&quot;seed&quot;:[0,7],&quot;startX&quot;:[0,-0.6],&quot;startY&quot;:[0,-1.2],&quot;trailWidth&quot;:[0,2],&quot;showProbes&quot;:[0,true],&quot;caption&quot;:[0,&quot;Blue spokes are directions she tried and rejected — downhill, so she stayed put — and they stay on the map so you can see them pile up. Coral is a jump she kept. Watch the blue thicken into a shaving brush as she nears the top.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SearchFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:420px"></div><figcaption class="figure-caption">Blue spokes are directions she tried and rejected — downhill, so she stayed put — and they stay on the map so you can see them pile up. Coral is a jump she kept. Watch the blue thicken into a shaving brush as she nears the top.</figcaption></figure><!--astro:end--></astro-island></div><p>Watch the rejected attempts. Most jumps are wasted. She is not being clever;
+she is being persistent, and near the top she spends most of her effort
+discovering that everything around her is lower.</p><h3 id="what-she-actually-sees">What she actually sees</h3><p>Everything above is a lie of presentation. You have been looking at the whole
+landscape this entire time. She has not.</p><div class="wide"><astro-island uid="ZuIeJA" prefix="r26" component-url="/optimization-kangaroos/_astro/SightFigure.ChHowlSJ.js" component-export="SightFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;Himmelblau&quot;],&quot;algorithm&quot;:[0,&quot;hill-climber&quot;],&quot;seed&quot;:[0,5],&quot;runs&quot;:[0,4],&quot;steps&quot;:[0,120],&quot;caption&quot;:[0,&quot;Four hill climbers, from their side. Each was dropped somewhere different and none of them knows about the others. The map is dark except where they have been. The first toggle switches between everywhere they have ever stood and the much smaller patch each can sense from where it is standing right now; the second puts the real landscape back for comparison.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SightFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure"><div style="min-height:480px"></div><figcaption class="figure-caption">Four hill climbers, from their side. Each was dropped somewhere different and none of them knows about the others. The map is dark except where they have been. The first toggle switches between everywhere they have ever stood and the much smaller patch each can sense from where it is standing right now; the second puts the real landscape back for comparison.</figcaption></figure><!--astro:end--></astro-island></div><p>Two things are worth sitting with here.</p><p>The first is the number in the corner. They work hard — four independent
+searches, hundreds of evaluations between them — and cover almost none of the
+world. A search can look energetic and still have touched a few per cent of the
+map. Nothing about being busy makes it thorough.</p><p>The second only shows up on the second toggle. Turn the landscape on and she is
+standing next to something enormous that she has no way of knowing about. Turn
+it off again and that mountain simply does not exist, because for her it does
+not. Every judgement she makes is correct given what she can feel; it is the
+<em>given</em> that ruins her.</p><p>This is the honest version of every other figure in this article. The rest are
+drawn our way round because a dark screen teaches nothing — but her way round
+is the true one, and it is worth having seen once.</p><p>The same thing works in three dimensions, and it is worth one look because the
+flat map understates it. From above, unseen ground is merely dark. In relief,
+it is <em>not there</em> — she is hopping along a thin lit ridge suspended in nothing,
+and the mountain she is on has no visible shape beyond the few metres she has
+walked.</p><div class="wide"><astro-island uid="ZVdwdv" prefix="r27" component-url="/optimization-kangaroos/_astro/SearchFigure.-jiiD0qh.js" component-export="SearchFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;Himmelblau&quot;],&quot;algorithm&quot;:[0,&quot;hill-climber&quot;],&quot;seed&quot;:[0,22],&quot;runs&quot;:[0,3],&quot;fog&quot;:[0,0.12],&quot;height&quot;:[0,440],&quot;caption&quot;:[0,&quot;Three hill climbers in relief, with the terrain drawn only where they have been. Drag to orbit — the parts of the landscape nobody has walked simply do not exist to look at.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SearchFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:440px"></div><figcaption class="figure-caption">Three hill climbers in relief, with the terrain drawn only where they have been. Drag to orbit — the parts of the landscape nobody has walked simply do not exist to look at.</figcaption></figure><!--astro:end--></astro-island></div><p>There is an obvious improvement available: stop guessing which way is up, and
+measure it.</p><h3 id="the-bowling-ball">The bowling ball</h3><p>This is the bit that usually gets replaced with a paragraph of calculus. In the
+same thread, Lutz Prechelt refused to do that, and explained it with sports
+equipment instead. He starts by naming the gap:</p><blockquote><p>The analogy only explains WHAT the algorithm does, but not HOW it does the most
+intricate part: chosing the direction of the next jump.
+<cite>Lutz Prechelt, comp.ai.neural-nets, 1993</cite></p></blockquote><p>Then he closes it. The kangaroo digs two trenches at her feet — one running
+north–south, one running east–west — and lines them with steel, and then
+teflon, so that they are perfectly smooth and frictionless. She takes a bowling
+ball out of her pouch, drops it into the north–south trench, and watches which
+way it rolls, and how far.</p><p>Then she does the east–west trench.</p><p>Say the ball rolls <strong>8 cm north</strong> and <strong>14 cm east</strong>. Now she multiplies. A
+kangaroo using a <em>learning rate</em> of 50 jumps to a point <strong>4 metres north and
+7 metres east</strong> of where she was standing.</p><p>That is the whole of it. The two trenches are the two dials, tested one at a
+time. How far the ball rolls is how steeply the ground falls away in that
+direction. And the learning rate is a multiplier — 8 cm becomes 4 m because
+8 × 50 = 400.</p><blockquote><p>It is not important for the algorithm whether the kangaroo uses the same
+bowling ball over and over again, or throws it away after each measurement and
+picks a new one from its pouch next time. This is because in the
+backpropagation world, bowling balls bio-degrade in zero time.
+<cite>Prechelt</cite></p></blockquote><div class="wide"><figure class="figure"><svg viewBox="0 0 900 268" class="bowling-diagram" role="img" aria-label="Two frictionless trenches at the kangaroo&#x27;s feet, one running north to south and one east to west. A bowling ball dropped into the north-south trench rolls 8 centimetres north; in the east-west trench it rolls 14 centimetres east. Multiplied by a learning rate of 50, that is a jump of 4 metres north and 7 metres east."><g transform="translate(20 26)"><text x="0" y="0" class="panel-label">1. Dig north–south</text><path d="M 0 82 C 45 92, 88 99, 125 96 C 158 94, 190 100, 250 112 L 250 230 L 0 230 Z" class="ground"></path><path d="M 40 128 L 125 140 L 210 108" class="trench"></path><path d="M 40 128 L 125 140 L 210 108" class="trench-plate"></path><circle cx="129" cy="130" r="8" class="ball-ghost"></circle><circle cx="102.12" cy="136.656" r="9" class="ball"></circle><circle cx="99.12" cy="133.656" r="2" class="ball-hole"></circle><g><line x1="125" y1="168" x2="125" y2="184" class="tick"></line><line x1="125" y1="176" x2="83.4" y2="176" class="roll" marker-end="url(#roll-head)"></line><text x="104.2" y="164" class="roll-label" text-anchor="middle">8 cm north</text></g><text x="125" y="212" class="axis-note" text-anchor="middle">it rolls downhill — gently, so not far</text></g><g transform="translate(320 26)"><text x="0" y="0" class="panel-label">2. Dig east–west</text><path d="M 0 34 C 45 60, 90 86, 125 96 C 155 104, 190 118, 250 128 L 250 230 L 0 230 Z" class="ground"></path><path d="M 40 60 L 125 132 L 210 150" class="trench"></path><path d="M 40 60 L 125 132 L 210 150" class="trench-plate"></path><circle cx="121" cy="122" r="8" class="ball-ghost"></circle><circle cx="165.04" cy="139.472" r="9" class="ball"></circle><circle cx="162.04" cy="136.472" r="2" class="ball-hole"></circle><g><line x1="125" y1="168" x2="125" y2="184" class="tick"></line><line x1="125" y1="176" x2="197.8" y2="176" class="roll" marker-end="url(#roll-head)"></line><text x="161.4" y="164" class="roll-label" text-anchor="middle">14 cm east</text></g><text x="125" y="212" class="axis-note" text-anchor="middle">steeper this way, so it rolls further</text></g><g transform="translate(620 26)"><text x="0" y="0" class="panel-label">3. Multiply, and jump</text><g transform="translate(0 26)"><g transform="translate(0 40)"><text x="0" y="0" class="sum sum-north">8 cm</text><text x="62" y="0" class="sum-op">× <!-- -->50</text><text x="130" y="0" class="sum-op">=</text><text x="152" y="0" class="sum sum-north">4 m</text></g><g transform="translate(0 86)"><text x="0" y="0" class="sum sum-east">14 cm</text><text x="62" y="0" class="sum-op">× <!-- -->50</text><text x="130" y="0" class="sum-op">=</text><text x="152" y="0" class="sum sum-east">7 m</text></g></g><g transform="translate(28 140)"><line x1="0" y1="70" x2="0" y2="0" class="plan-axis"></line><line x1="0" y1="70" x2="150" y2="70" class="plan-axis"></line><text x="-6" y="6" class="axis-note" text-anchor="end">N</text><text x="152" y="74" class="axis-note">E</text><circle cx="0" cy="70" r="4" class="here"></circle><line x1="0" y1="70" x2="63" y2="34" class="jump" marker-end="url(#jump-head)"></line><text x="71" y="34" class="jump-label">4<!-- --> m N, <!-- -->7<!-- --> m E</text></g></g><defs><marker id="jump-head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ck-coral)"></path></marker><marker id="roll-head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ck-text-bright)"></path></marker></defs></svg><figcaption class="figure-caption">The whole of backpropagation, in three panels. Dig, roll, measure — twice, once along each axis — then multiply by the learning rate and jump. Nothing else happens.</figcaption></figure></div><p>Two trenches, two numbers, one multiplication. That is a gradient, and it is
+the entire mechanism the phrase “the network learns” is standing in front of.</p><p>Here is that, with everything she cannot see taken away.</p><div class="wide"><astro-island uid="Mv0nx" prefix="r29" component-url="/optimization-kangaroos/_astro/SightFigure.ChHowlSJ.js" component-export="SightFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;Himmelblau&quot;],&quot;algorithm&quot;:[0,&quot;gradient-ascent&quot;],&quot;seed&quot;:[0,2],&quot;startX&quot;:[0,-0.4],&quot;startY&quot;:[0,-0.6],&quot;steps&quot;:[0,140],&quot;sight&quot;:[0,0.08],&quot;rate&quot;:[0,9],&quot;mode&quot;:[0,&quot;window&quot;],&quot;showGradient&quot;:[0,true],&quot;height&quot;:[0,480],&quot;caption&quot;:[0,&quot;Gradient ascent with only the two trenches she actually dug. The cyan arrow is the answer the bowling ball gave her — the direction, at her feet, right now. Everything beyond the lit circle is a rumour. Switch to &#39;everywhere she has been&#39; to watch the readings pile up into a path, or turn the landscape on to see what she was walking through the whole time.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SightFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure"><div style="min-height:480px"></div><figcaption class="figure-caption">Gradient ascent with only the two trenches she actually dug. The cyan arrow is the answer the bowling ball gave her — the direction, at her feet, right now. Everything beyond the lit circle is a rumour. Switch to &#x27;everywhere she has been&#x27; to watch the readings pile up into a path, or turn the landscape on to see what she was walking through the whole time.</figcaption></figure><!--astro:end--></astro-island></div><p>That single arrow is the entire content of a backpropagation step. Not a plan,
+not a route, not a view of the mountain — one direction, measured where she is
+standing, thrown away as soon as she lands.</p></div>
+<div class="prose"><h2 id="act-two-how-far-to-jump">Act two: how far to jump</h2><p>The learning rate looked like a footnote. It is not. It is the single number
+most likely to be wrong, and Sarle spends more of the thread on its failures
+than on any other topic.</p><p>The trouble is what the multiplier is applied <em>to</em>. Roll distance depends on
+steepness, so the jump does too:</p><blockquote><p>A major problem with standard backprop is that the distance the kangaroo hops
+is related to the steepness of the terrain. If the kangaroo starts on a gently
+sloping plain instead of a mountain side, she will take very small hops and
+make very slow progress. When she finally starts to ascend a mountain, her hops
+get longer and more dangerous, and she may hop off the mountain altogether.
+<cite>Sarle</cite></p></blockquote><p>Three failures in one paragraph, and they pull in opposite directions.</p><div class="wide"><astro-island uid="Z205WY" prefix="r30" component-url="/optimization-kangaroos/_astro/SearchFigure.-jiiD0qh.js" component-export="SearchFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;Himmelblau&quot;],&quot;algorithm&quot;:[0,&quot;gradient-ascent-raw&quot;],&quot;rate&quot;:[0,0.0002],&quot;startX&quot;:[0,-0.4],&quot;startY&quot;:[0,-0.6],&quot;seed&quot;:[0,4],&quot;height&quot;:[0,360],&quot;caption&quot;:[0,&quot;Rate far too low. Two hundred and twenty jumps, every one of them in exactly the right direction, and she has moved about a twentieth of the way to the nearest summit.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SearchFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:360px"></div><figcaption class="figure-caption">Rate far too low. Two hundred and twenty jumps, every one of them in exactly the right direction, and she has moved about a twentieth of the way to the nearest summit.</figcaption></figure><!--astro:end--></astro-island><astro-island uid="RuVf2" prefix="r31" component-url="/optimization-kangaroos/_astro/SearchFigure.-jiiD0qh.js" component-export="SearchFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;Himmelblau&quot;],&quot;algorithm&quot;:[0,&quot;gradient-ascent-raw&quot;],&quot;rate&quot;:[0,0.05],&quot;startX&quot;:[0,-0.4],&quot;startY&quot;:[0,-0.6],&quot;maxSteps&quot;:[0,40],&quot;seed&quot;:[0,4],&quot;height&quot;:[0,360],&quot;caption&quot;:[0,&quot;Rate too high, from the same spot. She reaches steep ground, the slope multiplies into a jump the width of the map, and after that she is bouncing between corners. Forty hops shown; the direction was never wrong.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SearchFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:360px"></div><figcaption class="figure-caption">Rate too high, from the same spot. She reaches steep ground, the slope multiplies into a jump the width of the map, and after that she is bouncing between corners. Forty hops shown; the direction was never wrong.</figcaption></figure><!--astro:end--></astro-island></div><p>Too small and she is correct and useless. Too large and the first jump from
+steep ground throws her clean across the map — she has not made a mistake about
+<em>direction</em>, only about how much to trust it.</p><p>And there is a third failure that only shows up at the end:</p><blockquote><p>If the kangaroo ever gets near the peak, she may jump back and forth across the
+peak without ever landing on it. If you use a decaying step size, the kangaroo
+gets tired and makes smaller and smaller hops, so if she ever gets near the
+peak she has a better chance of actually landing on it before the Himalayas
+erode away.
+<cite>Sarle</cite></p></blockquote><p>A jump sized for crossing a plain is far too big for a summit. The fix is to
+get tired on purpose: shrink the jump as you go. Modern systems all do some
+version of this, and call it a learning rate schedule.</p><div class="wide"><astro-island uid="Z2hWNu5" prefix="r32" component-url="/optimization-kangaroos/_astro/SearchFigure.-jiiD0qh.js" component-export="SearchFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;Himmelblau&quot;],&quot;algorithm&quot;:[0,&quot;gradient-ascent&quot;],&quot;stepDecay&quot;:[0,0.985],&quot;startX&quot;:[0,-0.4],&quot;startY&quot;:[0,-0.6],&quot;seed&quot;:[0,4],&quot;caption&quot;:[0,&quot;A decaying rate, from the same starting point as the two failures above. Long strides while there is ground to cover, shortening as she arrives, and she settles on the summit instead of skating across it.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SearchFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:420px"></div><figcaption class="figure-caption">A decaying rate, from the same starting point as the two failures above. Long strides while there is ground to cover, shortening as she arrives, and she settles on the summit instead of skating across it.</figcaption></figure><!--astro:end--></astro-island></div></div>
+<div class="prose"><h2 id="act-three-getting-unstuck">Act three: getting unstuck</h2><p>Everything so far shares one flaw, and it is fatal.</p><p>Every method above only ever goes uphill. Which means every one of them stops
+at the top of whatever hill it happened to land on. Not Everest — <em>the nearest
+hill</em>. If the parachute dropped her on Chapel Hill, she climbs Chapel Hill,
+plants a flag, and reports success.</p><p>This is not a rare edge case. It is the normal outcome.</p><div class="wide"><astro-island uid="2f24Ri" prefix="r33" component-url="/optimization-kangaroos/_astro/SearchFigure.-jiiD0qh.js" component-export="SearchFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;Himmelblau&quot;],&quot;algorithm&quot;:[0,&quot;hill-climber&quot;],&quot;seed&quot;:[0,11],&quot;runs&quot;:[0,4],&quot;height&quot;:[0,460],&quot;caption&quot;:[0,&quot;The same algorithm, four times, differing only in where the parachute dropped. This landscape has four summits of exactly equal height, and each kangaroo climbs whichever one she woke up nearest to. None of them is wrong. None of them knows about the others.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SearchFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:460px"></div><figcaption class="figure-caption">The same algorithm, four times, differing only in where the parachute dropped. This landscape has four summits of exactly equal height, and each kangaroo climbs whichever one she woke up nearest to. None of them is wrong. None of them knows about the others.</figcaption></figure><!--astro:end--></astro-island></div><p>Four runs, four answers. Nobody made a mistake and nobody can tell they are not
+alone — each kangaroo did the correct thing given what she could feel under her
+feet, and where she ended up was decided by the parachute rather than by the
+climbing.</p><p>Run it across thirty starts on a landscape that <em>does</em> have one true summit and
+the same thing shows up as a number.</p><p>So the rest of the thread is about kangaroos willing to do something that looks,
+locally, like a mistake.</p><h3 id="get-drunk">Get drunk</h3><blockquote><p>In simulated annealing, the kangaroo is drunk and hops around randomly for a
+long time. However, she gradually sobers up and the more sober she is, the more
+likely she is to hop up hill.
+<cite>Sarle</cite></p></blockquote><p>Early on she will go downhill happily, which means she can leave a hill she has
+already climbed and find a better one. As she sobers, downhill jumps get rarer,
+until eventually she only goes up and settles wherever she is.</p><p>The name comes from metalworking — heat a metal and cool it slowly and the
+atoms settle into a better arrangement than if you had quenched it. The
+kangaroo version is more memorable and means the same thing.</p><div class="wide"><astro-island uid="Zou1m1" prefix="r34" component-url="/optimization-kangaroos/_astro/SearchFigure.-jiiD0qh.js" component-export="SearchFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;Eggholder&quot;],&quot;algorithm&quot;:[0,&quot;annealing&quot;],&quot;seed&quot;:[0,6],&quot;runs&quot;:[0,3],&quot;framesPerStep&quot;:[0,3],&quot;contours&quot;:[0,9],&quot;caption&quot;:[0,&quot;Wild early, focused late — watch them abandon perfectly good summits in the first few seconds. One of these three reaches the true highest point on the map; the other two sober up somewhere lower and stay there. Annealing improves the odds. It does not promise anything.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SearchFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:420px"></div><figcaption class="figure-caption">Wild early, focused late — watch them abandon perfectly good summits in the first few seconds. One of these three reaches the true highest point on the map; the other two sober up somewhere lower and stay there. Annealing improves the odds. It does not promise anything.</figcaption></figure><!--astro:end--></astro-island></div><h3 id="send-more-kangaroos">Send more kangaroos</h3><p>If one kangaroo lands somewhere unpromising, land a hundred.</p><blockquote><p>A genetic algorithm begins like random multistart. However, these kangaroos do
+not know that they are supposed to be looking for the top of a mountain. Every
+few years, you shoot the kangaroos at low altitudes and hope the ones that are
+left will be fruitful, multiply, and ascend.
+<cite>Sarle</cite></p></blockquote><p>Which is, allowing for the phrasing, an accurate description of a genetic
+algorithm. Scatter a population, cull the low ones, breed the survivors,
+repeat.</p><div class="wide"><astro-island uid="ZD939Q" prefix="r35" component-url="/optimization-kangaroos/_astro/SearchFigure.-jiiD0qh.js" component-export="SearchFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;data:10&quot;],&quot;algorithm&quot;:[0,&quot;genetic&quot;],&quot;seed&quot;:[0,1],&quot;framesPerStep&quot;:[0,14],&quot;populationStyle&quot;:[0,&quot;generations&quot;],&quot;height&quot;:[0,460],&quot;caption&quot;:[0,&quot;Ten generations at a time, on a landscape with four summits of different heights. Blue is the oldest generation on screen, coral the newest. Nobody hops — offspring are not their parents having jumped, they are new kangaroos born somewhere else. The first generation is scattered across all four summits; by about the tenth only two are still occupied, and by the fifteenth the whole population is on the tallest.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SearchFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:460px"></div><figcaption class="figure-caption">Ten generations at a time, on a landscape with four summits of different heights. Blue is the oldest generation on screen, coral the newest. Nobody hops — offspring are not their parents having jumped, they are new kangaroos born somewhere else. The first generation is scattered across all four summits; by about the tenth only two are still occupied, and by the fifteenth the whole population is on the tallest.</figcaption></figure><!--astro:end--></astro-island></div><p>Nothing in that figure climbs. Each generation is a scatter of individuals
+standing where they were born, and the only thing that happens is that the
+scatter gets denser in the good places and empties out of the bad ones. That
+is the whole mechanism — no kangaroo ever improved, the <em>population</em> did.</p><div class="wide"><astro-island uid="Z1GlxLW" prefix="r36" component-url="/optimization-kangaroos/_astro/EnsembleFigure.D1tvAbfJ.js" component-export="EnsembleFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;Schwefel&quot;],&quot;algorithms&quot;:[1,[[0,&quot;hill climber&quot;],[0,&quot;gradient ascent&quot;],[0,&quot;annealing&quot;],[0,&quot;genetic algorithm&quot;]]],&quot;seeds&quot;:[0,30],&quot;chart&quot;:[0,&quot;success&quot;],&quot;caption&quot;:[0,&quot;Thirty runs of each, on a landscape with one true summit and a great many convincing decoys. The two methods from acts one and two never find it — not rarely, never. The two that are willing to go downhill find it a third to two-fifths of the time.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;EnsembleFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure"><div style="min-height:200px"></div><figcaption class="figure-caption">Thirty runs of each, on a landscape with one true summit and a great many convincing decoys. The two methods from acts one and two never find it — not rarely, never. The two that are willing to go downhill find it a third to two-fifths of the time.</figcaption></figure><!--astro:end--></astro-island></div><p>A third is not a good number. It is an enormous improvement on zero.</p><p>Sarle then undercuts his own animal:</p><blockquote><p>Current research suggests that fleas may be more effective than kangaroos in
+genetic algorithms, since their faster rate of reproduction more than
+compensates for their shorter hops.
+<cite>Sarle</cite></p></blockquote><h3 id="put-her-on-the-actual-earth">Put her on the actual Earth</h3><p>Every landscape so far has been invented. They are good landscapes — they were
+designed by people who wanted to know whether a search method works, and they
+are hard in the specific ways real problems are hard — but nobody has ever
+stood on one.</p><p>So here is the planet. The same elevation data as the Everest close-up at the
+top of this page, all of it, at seventy-eight kilometres to the sample. Sarle’s
+Everest and his K2 are both on it. So is Chapel Hill.</p><p>Drop sixty kangaroos at random, give each one two thousand two hundred hops,
+and let them work.</p><div class="wide"><astro-island uid="Z262Cex" prefix="r37" component-url="/optimization-kangaroos/_astro/WorldOutcomeFigure.DVOqfcCf.js" component-export="WorldOutcomeFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;panels&quot;:[1,[[0,{&quot;label&quot;:[0,&quot;the blind hill climber&quot;],&quot;algorithm&quot;:[0,&quot;hill-climber&quot;]}],[0,{&quot;label&quot;:[0,&quot;simulated annealing&quot;],&quot;cooling&quot;:[0,0.9999]}]]],&quot;caption&quot;:[0,&quot;Sixty runs of each, from the same sixty random starting points. Every ring is where one kangaroo finished; every cross is one who finished below sea level.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;WorldOutcomeFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure"><div style="min-height:240px"></div><figcaption class="figure-caption">Sixty runs of each, from the same sixty random starting points. Every ring is where one kangaroo finished; every cross is one who finished below sea level.</figcaption></figure><!--astro:end--></astro-island></div><p>Fourteen of the sixty hill climbers drown.</p><p>That is not a figure of speech and it is not a tuning problem. Two thirds of
+this planet is ocean, so a quarter of the random drops land in one — and on an
+abyssal plain there is no uphill to find. She feels around, everything nearby
+is the same depth or deeper, and she stops. No step size fixes that. Nothing
+from act two fixes that. The method’s entire strategy is <em>go up from here</em>, and
+there is no up.</p><p>The annealed kangaroo, from the identical sixty starting points and the same
+number of hops, averages five thousand three hundred metres and every single
+one of them ends on high ground. The difference between the two panels is one
+rule: <strong>be willing to go downhill at first.</strong> She can leave the ocean because
+she is drunk enough not to care that leaving makes things worse.</p><h3 id="the-sobering-up-schedule-is-the-whole-game">The sobering-up schedule is the whole game</h3><p>Annealing has a dial, and until now it has been set for you. It governs how
+fast she sobers up. Here is what it does.</p><div class="wide"><astro-island uid="o07WK" prefix="r38" component-url="/optimization-kangaroos/_astro/WorldOutcomeFigure.DVOqfcCf.js" component-export="WorldOutcomeFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;panels&quot;:[1,[[0,{&quot;label&quot;:[0,&quot;cooling 0.9&quot;],&quot;cooling&quot;:[0,0.9]}],[0,{&quot;label&quot;:[0,&quot;cooling 0.99&quot;],&quot;cooling&quot;:[0,0.99]}],[0,{&quot;label&quot;:[0,&quot;cooling 0.999&quot;],&quot;cooling&quot;:[0,0.999]}],[0,{&quot;label&quot;:[0,&quot;cooling 0.9999&quot;],&quot;cooling&quot;:[0,0.9999]}]]],&quot;caption&quot;:[0,&quot;The same sixty kangaroos and the same budget in every panel. Only the rate she sobers up changes — 0.9 means she is sober within a few dozen hops, 0.9999 means she is still wandering near the end.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;WorldOutcomeFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure"><div style="min-height:240px"></div><figcaption class="figure-caption">The same sixty kangaroos and the same budget in every panel. Only the rate she sobers up changes — 0.9 means she is sober within a few dozen hops, 0.9999 means she is still wandering near the end.</figcaption></figure><!--astro:end--></astro-island></div><p>Read it as a collapse. Sober up fast and the sixty runs finish on <strong>twenty-one
+separate highlands</strong> — Greenland, the Rockies, the Andes, the Ethiopian
+highlands, the Alps, a scatter across Antarctica. Every one of them is a
+perfectly real mountain. None of them is the highest.</p><p>Sober up slowly and they finish on <strong>three</strong>, and fifty-odd of the sixty are on
+the same one.</p><p>This is the clearest thing in the article, and it is worth saying plainly:
+<strong>the schedule does not decide how well she does. It decides which mountain she
+ends up on.</strong> A kangaroo who freezes early is not searching badly — she is
+searching a smaller world, one that happens to contain whatever she was
+standing near when she stopped being willing to leave.</p><p>Notice what she settles for at 0.9 and 0.99, too. The single most common
+outcome is the Antarctic plateau: a vast, easy, high place that is nowhere near
+the highest. Broad and easy beats narrow and tall, every time, for a searcher
+who has stopped wandering.</p><h3 id="how-far-not-just-how-willing">How far, not just how willing</h3><p>There is a second dial, and this is the one the metaphor keeps eliding.
+Temperature governs how willing she is to go <em>downhill</em>. It says nothing about
+how <em>far</em> she jumps. Those are different things and they fail differently.</p><p>Over two hundred runs of three thousand hops on this planet:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>how far she hops</th><th>ends near the top</th><th>ends <em>at</em> the top</th></tr></thead><tbody><tr><td>2% of the map</td><td>104 / 200</td><td>33 / 200</td></tr><tr><td>30% of the map</td><td><strong>144 / 200</strong></td><td><strong>0 / 200</strong></td></tr><tr><td>30%, shrinking to 0.07%</td><td>104 / 200</td><td><strong>50 / 200</strong></td></tr></tbody></table><p>Big hops find the right continent and can never resolve a summit. Small hops
+resolve a summit and can never cross an ocean. Neither is wrong; they are
+answers to different questions, and the run only asks one of them at a time.</p><p>Which is Sarle’s tired kangaroo, arriving where it was needed all along:</p><blockquote><p>If the kangaroo gets tired and makes smaller and smaller hops, she will
+eventually make it to the top of the nearest mountain.
+<cite>Sarle</cite></p></blockquote><p>Start with the hops of a kangaroo who has no idea where she is, and end with
+the hops of one who thinks she is nearly there. That beats every fixed setting
+at actually standing on the summit.</p><p>And it can be overdone, in exactly the way act two warned. Shrink too fast and
+she is crawling before she has finished looking — thirty per cent decaying to
+nothing scores worse than not decaying at all. Getting tired is a strategy.
+Getting tired too early is just stopping.</p><div class="prose"><p>One honest note about all of this. At seventy-eight kilometres to the sample,
+Everest is not a mountain — it is one pixel on a very large plateau, and the
+highest point in this data reads six thousand and eighty-eight metres, at
+28.1°N 87.0°E. Which is the same thing the opening said about 8,749 against
+8,849, one zoom level further out. The kangaroo is not climbing Everest. She is
+climbing what Everest looks like from far enough away, and so is every machine
+learning model that has ever been trained on a sample of anything.</p></div></div>
+<div class="prose"><h2 id="act-three-and-a-half-the-kangaroo-who-draws-her-own-map">Act three and a half: the kangaroo who draws her own map</h2><p><strong>This one is not in the email.</strong> Sarle was writing in 1993 and the method
+arrived properly in 1998, so nobody in the thread could have mentioned it. It
+is here because it is the only idea in this article that is different in <em>kind</em>
+from everything above, rather than different in degree.</p><p>Every kangaroo so far has been cheap and blind. Hundreds of hops, each decided
+from what she can feel under her feet at that instant, and nothing remembered
+except the best spot so far.</p><p>This one is expensive and thoughtful. She hops about twenty times in total.
+Between hops she sits down and reconstructs the entire landscape from the
+handful of places she has actually stood — and, crucially, marks how sure she
+is about each part of the reconstruction.</p><p>Then she goes wherever the answer to one question is highest: <em>where might I
+find ground better than the best I have found so far?</em> Which is not the same as
+“where do I think it is high”. A place she is confident is merely average
+scores nothing. A place she knows nothing about scores well, because it might
+be anything.</p><div class="wide"><astro-island uid="Z1LwVvD" prefix="r39" component-url="/optimization-kangaroos/_astro/BayesianFigure.DXFYlKya.js" component-export="BayesianFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;seed&quot;:[0,3],&quot;steps&quot;:[0,22],&quot;caption&quot;:[0,&quot;Her belief. The ground you are looking at is not the landscape — it is what she thinks the landscape is, rebuilt from scratch after every hop. Grey, featureless ground is where she has no idea, and the contour lines fade out there because there is nothing to draw them from. Pins mark every place she has actually stood; those are the only hard facts in the picture. The ring is where she has decided to go next.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;BayesianFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:460px"></div><figcaption class="figure-caption">Her belief. The ground you are looking at is not the landscape — it is what she thinks the landscape is, rebuilt from scratch after every hop. Grey, featureless ground is where she has no idea, and the contour lines fade out there because there is nothing to draw them from. Pins mark every place she has actually stood; those are the only hard facts in the picture. The ring is where she has decided to go next.</figcaption></figure><!--astro:end--></astro-island></div><p>And here is what was actually there the whole time. Same camera, same vertical
+scale, same twenty-two hops drawn on top — the only difference is that this one
+is the real landscape rather than her reconstruction of it.</p><div class="wide"><astro-island uid="1lpIq7" prefix="r40" component-url="/optimization-kangaroos/_astro/BayesianFigure.DXFYlKya.js" component-export="BayesianFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;showTruth&quot;:[0,true],&quot;seed&quot;:[0,3],&quot;steps&quot;:[0,22],&quot;height&quot;:[0,400],&quot;caption&quot;:[0,&quot;The truth. Compare the shape near the pins with the shape far from them: where she has stood, her map is nearly right, and where she has not, it is a smooth guess.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;BayesianFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:400px"></div><figcaption class="figure-caption">The truth. Compare the shape near the pins with the shape far from them: where she has stood, her map is nearly right, and where she has not, it is a smooth guess.</figcaption></figure><!--astro:end--></astro-island></div><p>Watch her walk away from a summit. She will climb something, confirm it is
+good, and then leave — because a blank grey region on the other side of the map
+<em>might</em> be better, and she will never know unless she goes and stands there.
+None of the other kangaroos can do that, because none of them knows what it
+does not know.</p><h3 id="the-same-map-from-her-side">The same map, from her side</h3><p>Act one ended with a hill climber that took two hundred hops and sensed four
+per cent of the world. Here is this kangaroo doing the same thing, with the
+same controls.</p><div class="wide"><astro-island uid="Z1gTfwt" prefix="r41" component-url="/optimization-kangaroos/_astro/SightFigure.ChHowlSJ.js" component-export="SightFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;data:40&quot;],&quot;algorithm&quot;:[0,&quot;bayesian&quot;],&quot;seed&quot;:[0,3],&quot;steps&quot;:[0,24],&quot;sight&quot;:[0,0.11],&quot;rate&quot;:[0,2.2],&quot;height&quot;:[0,480],&quot;caption&quot;:[0,&quot;Twenty-four hops instead of two hundred, and each one lands somewhere she chose rather than somewhere she stumbled. The lit patches are deliberately spread out — that is the model working. Turn the landscape on to see how much of it she got away with never visiting.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SightFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure"><div style="min-height:480px"></div><figcaption class="figure-caption">Twenty-four hops instead of two hundred, and each one lands somewhere she chose rather than somewhere she stumbled. The lit patches are deliberately spread out — that is the model working. Turn the landscape on to see how much of it she got away with never visiting.</figcaption></figure><!--astro:end--></astro-island></div><p>The pools of light are the whole difference. The hill climber’s coverage is one
+smear, because each hop had to start where the last one ended. These are
+scattered across the map, because she was never obliged to walk — between hops
+she thinks, and thinking is free. She still cannot see the landscape. She has
+simply stopped needing to.</p><h3 id="how-eager-should-she-be-to-wander">How eager should she be to wander?</h3><p>That question has a number attached, and it is the most interesting dial in the
+whole article, because it is the only one where <strong>both extremes are bad.</strong></p><p>Everywhere else, a setting is either right or it is too much of something. Too
+small a learning rate is slow; too large and she flies off the mountain — but
+“slow” and “broken” are not the same kind of failure. Here the two failures are
+symmetric, and each is the other’s cure.</p><p>The number is how much credit she gives to <em>not knowing</em>. Call it her optimism:
+when she scores a place, she takes what she expects to find there and adds a
+few multiples of how uncertain she is. Nothing else changes.</p><ul>
+<li><strong>No optimism at all.</strong> She goes wherever her map already says is highest.
+Her map says it is highest because she has been there. So she goes there
+again. And again.</li>
+<li><strong>Enormous optimism.</strong> She goes wherever she knows least, which is always the
+place she has been furthest from. She conducts a beautiful survey of a
+continent and summits nothing.</li>
+</ul><div class="wide"><astro-island uid="2f1bVK" prefix="r42" component-url="/optimization-kangaroos/_astro/AcquisitionFigure.ClfMccnh.js" component-export="AcquisitionFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;seed&quot;:[0,4],&quot;steps&quot;:[0,24],&quot;caption&quot;:[0,&quot;One parachute drop, four settings of the dial. All four begin with the same four random samples — the hollow rings, identical in every panel — and diverge only once the setting takes over. Crosses are the four true summits. Watch the second panel commit to one basin early, and the fourth cover the whole map and finish worse.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;AcquisitionFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure"><div style="min-height:560px"></div><figcaption class="figure-caption">One parachute drop, four settings of the dial. All four begin with the same four random samples — the hollow rings, identical in every panel — and diverge only once the setting takes over. Crosses are the four true summits. Watch the second panel commit to one basin early, and the fourth cover the whole map and finish worse.</figcaption></figure><!--astro:end--></astro-island></div><p>The second and fourth panels are the argument. <strong>κ = 0.5 visits eighteen
+places and finishes at −0.8. κ = 8 visits all twenty-five and finishes at
+−15.7.</strong> The thorough one loses, by a factor of twenty. It maps the terrain beautifully and
+never converts any of it into altitude, because every time it gets near
+something good it notices somewhere it has not been.</p><p>And the greedy panel is worse still, in a way that is easy to miss: it looks
+like it has taken four or five samples. It has taken twenty-five. They are
+stacked on top of each other, because with no credit for uncertainty the
+best-looking spot on the map stays the best-looking spot on the map forever.
+Its line on the chart below is flat from the fifth evaluation onward — twenty
+wasted hops.</p><p>There is no universally right setting. The best value depends on the landscape,
+which she cannot see, which is the whole problem she was built to solve. This is
+where the honest answer becomes uncomfortable, and it is the same uncomfortable
+answer as the learning rate in act two: you tune it, by trying values and seeing
+what happens.</p><p>And this closes a loop. The expensive-to-evaluate thing this method was built
+for is, in practice, training a machine learning model — you cannot afford
+thousands of attempts when each one takes a day. So the honest answer to “how
+do you pick the learning rate from Act two?” is that you optimize that too,
+with this. The kangaroo ends up searching for a kangaroo.</p></div>
+<div class="prose"><h2 id="act-four-where-the-mountains-came-from">Act four: where the mountains came from</h2><p>Everything so far has assumed the landscape is simply <em>there</em> — a fixed thing
+the kangaroo is exploring badly. Prechelt points out, most of the way down the
+thread, that this is completely false, and it is the most important sentence in
+it:</p><blockquote><p>Why does the Himalaya look just like it does? The answer is: it doesn’t. The
+mountains in which the kangaroo jumps around are `induced’ by your training
+data. Each example suggests certain hills or mountains at certain points on the
+surface of the (otherwise absolutely flat) earth.
+<cite>Prechelt</cite></p></blockquote><p>The ground is not scenery. It is <em>built out of the examples you showed the
+machine</em>. Start with a flat plain; every training example raises a hill where
+it falls; the landscape is what you get when they all pile up.</p><p>Ten examples give you ten lumps. A thousand overlap into something that looks
+like real terrain.</p><div class="wide"><astro-island uid="1m2jqH" prefix="r43" component-url="/optimization-kangaroos/_astro/SearchFigure.-jiiD0qh.js" component-export="SearchFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;data:12&quot;],&quot;algorithm&quot;:[0,&quot;gradient-ascent&quot;],&quot;stepDecay&quot;:[0,0.985],&quot;seed&quot;:[0,6],&quot;dataSeed&quot;:[0,3],&quot;caption&quot;:[0,&quot;A landscape built from twelve examples. She climbs it, because it is the only ground there is.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SearchFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:420px"></div><figcaption class="figure-caption">A landscape built from twelve examples. She climbs it, because it is the only ground there is.</figcaption></figure><!--astro:end--></astro-island></div><p>Here is the part that should worry you.</p><p>Draw a <em>different</em> twelve examples — same machine, same process, just a
+different handful of data — and rebuild. The big mountains stay roughly where
+they were. The small hills move somewhere else entirely.</p><div class="wide"><astro-island uid="28MTHy" prefix="r44" component-url="/optimization-kangaroos/_astro/SearchFigure.-jiiD0qh.js" component-export="SearchFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;data:12&quot;],&quot;algorithm&quot;:[0,&quot;gradient-ascent&quot;],&quot;stepDecay&quot;:[0,0.985],&quot;seed&quot;:[0,6],&quot;dataSeed&quot;:[0,11],&quot;caption&quot;:[0,&quot;The same everything, with a different twelve examples. Compare the foothills to the figure above.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SearchFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:420px"></div><figcaption class="figure-caption">The same everything, with a different twelve examples. Compare the foothills to the figure above.</figcaption></figure><!--astro:end--></astro-island></div><p>Which tells you something the kangaroo cannot know: <strong>the big mountains are
+real and the small hills are an accident of which examples you happened to
+get.</strong> Under her feet they feel identical. Both are solid ground, both slope
+upward, and she has no way at all to tell them apart.</p><p>So when she summits a small hill and plants her flag, she has climbed something
+that exists only because of the particular examples she was trained on. Show
+the machine different data and the mountain is not there. She is standing on a
+plain, at no particular height, having climbed nothing.</p><p>That is what <strong>overfitting</strong> is. Not a subtle statistical failure — a kangaroo
+triumphant on top of a hill that was never there.</p><p>And it is why anyone serious keeps some data back. A landscape built from
+examples the machine never trained on is the only way to ask whether the
+mountain was real.</p><div class="wide"><astro-island uid="ZR4ECJ" prefix="r45" component-url="/optimization-kangaroos/_astro/SearchFigure.-jiiD0qh.js" component-export="SearchFigure" renderer-url="/optimization-kangaroos/_astro/client.DeyB5nf3.js" props="{&quot;surface&quot;:[0,&quot;data:400&quot;],&quot;algorithm&quot;:[0,&quot;gradient-ascent&quot;],&quot;stepDecay&quot;:[0,0.985],&quot;seed&quot;:[0,6],&quot;dataSeed&quot;:[0,3],&quot;caption&quot;:[0,&quot;Four hundred examples. The phantom foothills are gone; what remains is in the same place no matter which sample you draw.&quot;]}" ssr client="visible" opts="{&quot;name&quot;:&quot;SearchFigure&quot;,&quot;value&quot;:true}" await-children><figure class="figure figure-scene"><div style="min-height:420px"></div><figcaption class="figure-caption">Four hundred examples. The phantom foothills are gone; what remains is in the same place no matter which sample you draw.</figcaption></figure><!--astro:end--></astro-island></div><p>More data, fewer imaginary mountains. Which is the entire reason the industry
+is so hungry for it.</p><h3 id="standing-on-ground-that-keeps-moving">Standing on ground that keeps moving</h3><p>One more consequence, and it explains something that otherwise looks insane.</p><p>Real systems do not build the whole landscape before setting off. They show the
+machine a handful of examples, take one step on the landscape <em>those</em> examples
+build, then throw it away and draw a fresh handful.</p><p>Sarle saw it coming:</p><blockquote><p>With on-line training, there are frequent earthquakes, and mountains constantly
+appear and disappear. This makes it difficult for the blind kangaroo to tell
+whether she has ever reached the top of a mountain, and she has to take small
+hops to avoid falling into the gaping chasms that can open up at any moment.
+<cite>Sarle</cite></p></blockquote><p>It sounds like a disaster and it is how essentially everything is trained. No
+single handful is right, but the errors point in different directions and
+mostly cancel; the pull toward the real mountains is the one thing every
+handful agrees on. It is also why very large steps and very small batches are a
+bad combination — you are taking a confident stride on ground that is about to
+be demolished.</p></div>
+<div class="prose"><h2 id="what-actually-works">What actually works</h2><p>Prechelt ends with a ranking. After a full page of algorithms, he lists the
+best ways to find Mount Everest:</p><blockquote><ol>
+<li>to know where it is</li>
+<li>to have a map on which you can find it</li>
+<li>to know someone who knows where it is or who has a map</li>
+<li>to send a kangaroo to search for it</li>
+</ol><cite>Prechelt</cite></blockquote><p>Every method in this article is number four. Dead last, behind asking a friend.</p><p>It is a joke, and it is also the practical summary of the last decade of the
+field. Nobody starts from a random parachute drop any more if they can avoid
+it. They start from a model somebody else already trained — someone else’s map,
+which is number two, or number three if you count downloading it.</p><p>Searching is what you do when you have nothing better. It works. It is just not
+the first thing to reach for.</p><h2 id="have-a-go">Have a go</h2><p>Every figure above is fixed: one landscape, one algorithm, one seed, chosen to
+make one point. <strong><a href="./tool/">The tool</a></strong> is the same code with nothing fixed —
+all six searches, every landscape including the real ones, and every knob that
+was quietly set for you here, with a chart underneath saying whether it worked.</p><p>The most instructive thing you can do with it takes about thirty seconds: put a
+hill climber on Himmelblau and step the seed. Same algorithm, same landscape,
+same everything, and watch which summit she ends up on.</p></div>
+<div class="prose colophon"><h2 id="credit">Credit</h2><p>This article is a rendering of someone else’s writing. The thread is
+<em>Kangaroos and Training Neural Networks</em>, posted to comp.ai.neural-nets in
+September 1993 and revised by Warren S. Sarle in October 1994. Every quotation
+above is verbatim.</p><ul>
+<li><strong>Warren S. Sarle</strong> (SAS Institute) — the original post and the taxonomy of
+methods.</li>
+<li><strong>Lutz Prechelt</strong> (University of Karlsruhe) — the teflon trenches and the
+bowling ball, the landscape induced by training data, and the ranking.</li>
+<li><strong>Scott E. Fahlman</strong> (Carnegie Mellon) — a reply on cascade-correlation, in
+which the mountains are made of rubber and go flat when a kangaroo stands on
+one, and excess kangaroos find their way to army bases and attack the
+generals, leaving the army with poor generalization. None of it fitted here.
+It is the funniest thing in the thread and worth reading anyway.</li>
+<li><strong>Jonathan O’Donnell</strong> (RMIT, Melbourne) — read all of the above and replied,
+eighteen days later, “Presumably, this is why Australia is so flat.”</li>
+<li><strong>Tony Plate</strong> (1993) — the description of conjugate gradient methods.</li>
+</ul><p>The jokes are theirs. The mountains are simulated, the algorithms are real
+implementations rather than animations, and every figure runs live in your
+browser from a fixed random seed.</p></div></main> </body></html>

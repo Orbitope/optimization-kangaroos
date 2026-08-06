@@ -1,4 +1,4 @@
-import { CKAgentSeries, CKColor, CKMarker, agentSeries } from '@contentkit/tokens'
+import { CKAgentSeries, CKColor, CKMarker, agentSeries, withAlpha } from '@contentkit/tokens'
 import { hopDuration, runMultistart, type OptimizerState, type Surface } from '@kangaroos/core'
 import { CANVAS_MONO, ChartFrame, linearScale } from '@kangaroos/charts'
 import { SearchScene, useMultiRunView } from '@kangaroos/scene'
@@ -381,7 +381,10 @@ function BestSoFar({
       for (let g = 0; g <= 3; g++) {
         const v = lo - pad + ((hi - lo + pad * 2) * g) / 3
         const py = Math.round(y(v)) + 0.5
-        ctx.strokeStyle = CKColor.border
+        // The house gridline, same as `axes()` and the acquisition chart. Not
+        // `border`: that is the structural token, for plate edges and panel
+        // dividers, and it is a shade too assertive under a data series.
+        ctx.strokeStyle = withAlpha(CKColor.textMuted, 0.16)
         ctx.lineWidth = 1
         ctx.beginPath()
         ctx.moveTo(left, py)
