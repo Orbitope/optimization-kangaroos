@@ -135,6 +135,17 @@ export interface SceneTransform {
   readonly heightMin: number
   readonly heightMax: number
   readonly verticalScale: number
+  /**
+   * World half-extents in X and Z. The longer axis is always 1; the shorter is
+   * the domain's aspect ratio.
+   *
+   * Present because the scene has to know the shape of the ground it is
+   * drawing. Anything that framed, textured or bounded the terrain by assuming
+   * a unit square — the camera solve and the fog UVs both did — needs these
+   * instead.
+   */
+  readonly halfExtentX: number
+  readonly halfExtentZ: number
 
   /** Domain point plus altitude to a world position. */
   toWorld(x: number, y: number, height: number): Vec3
@@ -175,6 +186,25 @@ export function createSceneTransform(
   const centreX = (xMin + xMax) / 2
   const centreY = (yMin + yMax) / 2
 
+  /*
+   * One scale for both horizontal axes, so a rectangular domain renders as a
+   * rectangle.
+   *
+   * The first version divided X by halfX and Y by halfY, which maps *any*
+   * domain onto the unit square. Every analytic surface here is square, so it
+   * was invisible — and then real terrain arrived. A whole-Earth region is
+   * 40,000 km by 18,800 km, and squashing that to a square makes the Pacific
+   * as tall as it is wide. The already-baked Himalaya and Australia regions
+   * were being squeezed by about 10% and nobody noticed either.
+   *
+   * Dividing both by the larger half-extent keeps the longer axis spanning
+   * [-1, 1] — so `verticalScale` still means what its docstring says — and
+   * lets the shorter one come out proportionally short.
+   */
+  const half = Math.max(halfX, halfY)
+  const halfExtentX = halfX / half
+  const halfExtentZ = halfY / half
+
   // A flat surface has no range to normalize against; treat it as mid-height.
   const span = range.max - range.min
   const flat = !(span > 0)
@@ -190,28 +220,31 @@ export function createSceneTransform(
     heightMin: range.min,
     heightMax: range.max,
     verticalScale,
+    halfExtentX,
+    halfExtentZ,
     normalizeHeight,
     toWorldY,
 
     toWorldXZ(x, y) {
-      return { x: (x - centreX) / halfX, z: -(y - centreY) / halfY }
+      return { x: (x - centreX) / half, z: -(y - centreY) / half }
     },
 
     toWorld(x, y, height) {
-      return { x: (x - centreX) / halfX, y: toWorldY(height), z: -(y - centreY) / halfY }
+      return { x: (x - centreX) / half, y: toWorldY(height), z: -(y - centreY) / half }
     },
 
     fromWorldXZ(worldX, worldZ) {
-      return { x: worldX * halfX + centreX, y: -worldZ * halfY + centreY }
+      return { x: worldX * half + centreX, y: -worldZ * half + centreY }
     },
 
     normalFromGradient(gradient) {
       if (flat) return { x: 0, y: 1, z: 0 }
       // Chain rule through the world mapping. dWorldY/dHeight = verticalScale /
-      // span; dx/dWorldX = halfX; dy/dWorldZ = -halfY.
+      // span, and both horizontal axes share one scale, so dx/dWorldX = half
+      // and dy/dWorldZ = -half.
       const k = verticalScale / span
-      const dydx = gradient.x * halfX * k
-      const dydz = gradient.y * -halfY * k
+      const dydx = gradient.x * half * k
+      const dydz = gradient.y * -half * k
       const len = Math.hypot(dydx, 1, dydz)
       return { x: -dydx / len, y: 1 / len, z: -dydz / len }
     },

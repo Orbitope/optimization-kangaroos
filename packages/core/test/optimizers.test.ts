@@ -406,3 +406,114 @@ test('better crossover finds better answers, averaged over seeds', () => {
   }
   assert.ok(mean(0.5) > mean(0), `BLX ${mean(0.5).toFixed(0)} should beat strict ${mean(0).toFixed(0)}`)
 })
+
+// ── annealing: the proposal scale, and decaying it ─────────────────────────
+
+/**
+ * Temperature and proposal scale are the two halves of "sobering up" and are
+ * easy to confuse. Temperature governs how willing she is to go *downhill*;
+ * the proposal scale governs how *far* she jumps. Only the first existed until
+ * the whole-Earth figure needed the second.
+ */
+
+test('the default leaves the proposal scale alone, exactly as before', () => {
+  const withoutOption = collect(simulatedAnnealing(himmelblau, mulberry32(7), { maxSteps: 200 }))
+  const withDefault = collect(
+    simulatedAnnealing(himmelblau, mulberry32(7), { maxSteps: 200, proposalDecay: 1 }),
+  )
+  assert.equal(withoutOption.length, withDefault.length)
+  for (let i = 0; i < withoutOption.length; i++) {
+    assert.deepEqual(withoutOption[i]!.position, withDefault[i]!.position)
+  }
+})
+
+test('the proposal scale is reported, and shrinks geometrically', () => {
+  const decay = 0.99
+  const states = collect(
+    simulatedAnnealing(himmelblau, mulberry32(3), {
+      maxSteps: 100,
+      proposalScale: 4,
+      proposalDecay: decay,
+    }),
+  )
+  assert.ok(Math.abs((states[0]!.meta!.proposalScale as number) - 4) < 1e-9)
+  for (let i = 1; i < states.length; i++) {
+    const expected = 4 * decay ** i
+    assert.ok(
+      Math.abs((states[i]!.meta!.proposalScale as number) - expected) < 1e-6,
+      `step ${i}: ${states[i]!.meta!.proposalScale} vs ${expected}`,
+    )
+  }
+})
+
+test('decay actually shortens her hops, not just a number in the metadata', () => {
+  const run = (proposalDecay: number) =>
+    collect(
+      simulatedAnnealing(himmelblau, mulberry32(11), {
+        maxSteps: 600,
+        proposalScale: 3,
+        proposalDecay,
+      }),
+    )
+
+  const meanStep = (states: readonly OptimizerState[], from: number, to: number) => {
+    let sum = 0
+    for (let i = from + 1; i < to; i++) {
+      sum += Math.hypot(
+        states[i]!.position.x - states[i - 1]!.position.x,
+        states[i]!.position.y - states[i - 1]!.position.y,
+      )
+    }
+    return sum / (to - from - 1)
+  }
+
+  const decayed = run(0.99)
+  const constant = run(1)
+  const n = decayed.length
+
+  // Early on the two are the same search; late on the decayed one is crawling.
+  assert.ok(
+    meanStep(decayed, 0, Math.floor(n * 0.1)) > 10 * meanStep(decayed, Math.floor(n * 0.9), n),
+    'a decayed run should end up moving far less than it started',
+  )
+  assert.ok(
+    meanStep(constant, Math.floor(n * 0.9), n) > 5 * meanStep(decayed, Math.floor(n * 0.9), n),
+    'and far less than an undecayed one at the same point',
+  )
+})
+
+/**
+ * The outcome the option exists for: big hops find the right region and can
+ * never resolve a summit, small hops resolve a summit and can never cross the
+ * map, and decaying from one to the other beats both at standing on the top.
+ *
+ * Ackley rather than Eggholder on purpose. This only works on a landscape with
+ * coarse structure worth finding first and fine structure worth resolving
+ * second — Ackley is a single broad bowl under a fine ripple, which is the
+ * shape of the Earth figure. Eggholder is chaotic at every scale, and the same
+ * setting halves its hit rate there.
+ */
+test('decaying from a large scale finds the exact summit far more often', () => {
+  const diagonal = Math.hypot(
+    ackley.domain.xMax - ackley.domain.xMin,
+    ackley.domain.yMax - ackley.domain.yMin,
+  )
+  const peak = ackley.globalOptimum!.height
+
+  const hits = (opts: { proposalScale: number; proposalDecay?: number }) => {
+    let onPeak = 0
+    for (let seed = 1; seed <= 120; seed++) {
+      const states = collect(
+        simulatedAnnealing(ackley, mulberry32(seed), { maxSteps: 2000, cooling: 0.999, ...opts }),
+      )
+      if (states[states.length - 1]!.best.value > peak - 0.05) onPeak++
+    }
+    return onPeak
+  }
+
+  const fixed = hits({ proposalScale: diagonal * 0.25 })
+  const decaying = hits({ proposalScale: diagonal * 0.25, proposalDecay: 0.9975 })
+
+  assert.ok(fixed <= 3, `a large fixed hop should almost never land on the peak, got ${fixed}/120`)
+  assert.ok(decaying >= 10, `decaying should land on it often, got ${decaying}/120`)
+})

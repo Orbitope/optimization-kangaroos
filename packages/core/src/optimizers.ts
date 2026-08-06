@@ -323,6 +323,39 @@ export interface SimulatedAnnealingOptions extends BaseOptions {
   readonly minTemperature?: number
   /** Proposal spread, in domain units. Defaults to 5% of the diagonal. */
   readonly proposalScale?: number
+  /**
+   * Geometric shrink applied to the proposal spread each step. 1 never tires.
+   *
+   * Separate from `cooling`, which is the other half of the metaphor and is
+   * often confused with it: temperature governs how willing she is to go
+   * *downhill*, and this governs how *far* she jumps. Both were "sobering up"
+   * in the original but only one of them existed.
+   *
+   * It matters, and the measurement is worth recording. On a whole-Earth
+   * surface, over 200 runs of 3000 hops from random starts:
+   *
+   * | proposal spread | ends within 1200 m of the summit | ends *on* it |
+   * |---|---|---|
+   * | 2% of the diagonal   |  95/200 | 31/200 |
+   * | 30% of the diagonal  | 176/200 |  1/200 |
+   * | 30% decaying to 0.07% | 125/200 | 36/200 |
+   *
+   * Big hops find the right continent and can never resolve a summit; small
+   * hops resolve a summit and can never cross an ocean. Decaying from one to
+   * the other beats every fixed value at actually standing on the top.
+   *
+   * Deliberately unfloored. Decaying too fast is *worse* than not decaying at
+   * all — 30% shrinking to nothing halves the exact hits — and that failure is
+   * the point rather than something to guard against.
+   *
+   * It is also not free, which is why the default is 1. Decay helps when the
+   * landscape has coarse structure worth finding first and fine structure
+   * worth resolving second: Earth, or Ackley, where it takes the exact hits
+   * from 0/120 to 18/120. On Eggholder, which is chaotic at every scale with
+   * its optimum jammed in a corner, the same setting *halves* them — she stops
+   * being able to leave whichever basin she happened to shrink inside.
+   */
+  readonly proposalDecay?: number
 }
 
 /**
@@ -341,7 +374,8 @@ export function* simulatedAnnealing(
   const maxSteps = opts.maxSteps ?? 2000
   const cooling = opts.cooling ?? 0.995
   const minTemperature = opts.minTemperature ?? 1e-4
-  const scale = opts.proposalScale ?? domainDiagonal(surface.domain) * 0.05
+  const proposalDecay = opts.proposalDecay ?? 1
+  let scale = opts.proposalScale ?? domainDiagonal(surface.domain) * 0.05
 
   let current = at(surface, opts.start ?? randomStart(surface, rng))
   let best = current
@@ -359,7 +393,12 @@ export function* simulatedAnnealing(
     done,
     termination,
     ...(record ? { proposals } : {}),
-    meta: { temperature, accepted, acceptRate: step === 0 ? 0 : accepted / step },
+    meta: {
+      temperature,
+      accepted,
+      acceptRate: step === 0 ? 0 : accepted / step,
+      proposalScale: scale,
+    },
   })
 
   if (maxSteps < 1) return emit(0, true, 'max-steps')
@@ -387,6 +426,7 @@ export function* simulatedAnnealing(
     }
 
     temperature *= cooling
+    scale *= proposalDecay
     if (temperature < minTemperature) return emit(step, true, 'converged')
     if (step === maxSteps) return emit(step, true, 'max-steps')
 

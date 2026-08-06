@@ -482,7 +482,11 @@ export function SearchScene({
         part of any surface's extent.
       */}
       <FitCamera
-        halfExtents={[1, (transform.verticalScale * (1 + (camera?.headroom ?? 0.2))) / 2, 1]}
+        halfExtents={[
+          transform.halfExtentX,
+          (transform.verticalScale * (1 + (camera?.headroom ?? 0.2))) / 2,
+          transform.halfExtentZ,
+        ]}
         centre={[0, (transform.verticalScale * (1 + (camera?.headroom ?? 0.2))) / 2, 0]}
         azimuth={camera?.azimuth}
         elevation={camera?.elevation}

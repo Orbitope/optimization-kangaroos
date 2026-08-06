@@ -105,9 +105,14 @@ export function Terrain({
     uFog: { value: null as THREE.DataTexture | null },
     uFogStrength: { value: 0 },
     uVoid: { value: new THREE.Color(CKColor.void) },
+    // World half-extents in XZ. Not a constant since the transform started
+    // preserving aspect: a whole-Earth region is twice as wide as it is deep,
+    // and a hardcoded 1 fogs a stretched copy of the coverage grid.
+    uHalf: { value: new THREE.Vector2(1, 1) },
   })
   uniforms.current.uFog.value = fogTexture
   uniforms.current.uFogStrength.value = fogTexture ? fogStrength : 0
+  uniforms.current.uHalf.value.set(transform.halfExtentX, transform.halfExtentZ)
 
   /**
    * Contours are drawn in the fragment shader rather than extracted as
@@ -131,15 +136,15 @@ export function Terrain({
       shader.vertexShader = shader.vertexShader
         .replace(
           '#include <common>',
-          '#include <common>\nattribute float aHeight01;\nvarying float vHeight01;\nvarying vec2 vFogUv;',
+          '#include <common>\nattribute float aHeight01;\nuniform vec2 uHalf;\nvarying float vHeight01;\nvarying vec2 vFogUv;',
         )
         .replace(
           '#include <begin_vertex>',
-          // Domain maps to XZ in [-1,1] with domain +y at world -z, and the
-          // coverage grid's row 0 is the northern edge — so v runs straight
+          // Domain maps to XZ spanning ±uHalf with domain +y at world -z, and
+          // the coverage grid's row 0 is the northern edge — so v runs straight
           // from z with no flip. Getting this backwards fogs the wrong half of
           // the map, which looks plausible and is completely wrong.
-          '#include <begin_vertex>\nvHeight01 = aHeight01;\nvFogUv = vec2(position.x, position.z) * 0.5 + 0.5;',
+          '#include <begin_vertex>\nvHeight01 = aHeight01;\nvFogUv = vec2(position.x / uHalf.x, position.z / uHalf.y) * 0.5 + 0.5;',
         )
 
       shader.fragmentShader = shader.fragmentShader

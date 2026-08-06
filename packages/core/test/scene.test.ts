@@ -15,6 +15,7 @@ import {
   sampleGradientGrid,
   sampleHeightGrid,
   schwefel,
+  type Surface,
 } from '../dist/index.js'
 
 // ── the hop ────────────────────────────────────────────────────────────────
@@ -320,4 +321,80 @@ test('toWorld agrees with its own component parts', () => {
   assert.equal(full.x, xz.x)
   assert.equal(full.z, xz.z)
   assert.equal(full.y, t.toWorldY(h))
+})
+
+// ── aspect ratio ───────────────────────────────────────────────────────────
+
+/**
+ * A rectangular domain has to render as a rectangle.
+ *
+ * The transform used to divide X and Y by their own half-extents, which maps
+ * any domain onto the unit square. Every analytic surface is square so it was
+ * invisible for a long time — and then real terrain arrived, where a
+ * whole-Earth region is 40,000 km by 18,800 km and squashing it to a square
+ * makes the Pacific as tall as it is wide.
+ */
+function rectangular(width: number, height: number): Surface {
+  return {
+    name: 'rect',
+    domain: { xMin: -width / 2, xMax: width / 2, yMin: -height / 2, yMax: height / 2 },
+    // A tilted plane, so the range is non-degenerate and the gradient is known.
+    height: (x, y) => x * 0.001 + y * 0.002,
+    gradient: () => ({ x: 0.001, y: 0.002 }),
+  }
+}
+
+test('a square domain still fills the unit square exactly', () => {
+  const t = createSceneTransform(rectangular(100, 100))
+  assert.equal(t.halfExtentX, 1)
+  assert.equal(t.halfExtentZ, 1)
+  assert.ok(Math.abs(t.toWorldXZ(50, 50).x - 1) < 1e-12)
+  assert.ok(Math.abs(t.toWorldXZ(50, 50).z + 1) < 1e-12)
+})
+
+test('a wide domain keeps its proportions, with the long axis at 1', () => {
+  // The world: 40,075 km by 18,798 km, or 2.13 to 1.
+  const t = createSceneTransform(rectangular(40075, 18798))
+  assert.equal(t.halfExtentX, 1)
+  assert.ok(Math.abs(t.halfExtentZ - 18798 / 40075) < 1e-9, `${t.halfExtentZ}`)
+
+  const corner = t.toWorldXZ(40075 / 2, 18798 / 2)
+  assert.ok(Math.abs(corner.x - 1) < 1e-9)
+  assert.ok(Math.abs(corner.z + 18798 / 40075) < 1e-9)
+})
+
+test('a tall domain is handled the same way round', () => {
+  const t = createSceneTransform(rectangular(500, 2000))
+  assert.equal(t.halfExtentZ, 1)
+  assert.ok(Math.abs(t.halfExtentX - 0.25) < 1e-12)
+})
+
+test('one world unit is the same distance on both axes', () => {
+  // The property the whole change exists for: equal ground distances must map
+  // to equal world distances, whichever direction they run in.
+  const t = createSceneTransform(rectangular(40000, 10000))
+  const east = t.toWorldXZ(1000, 0).x - t.toWorldXZ(0, 0).x
+  const north = t.toWorldXZ(0, 0).z - t.toWorldXZ(0, 1000).z
+  assert.ok(Math.abs(east - north) < 1e-12, `${east} vs ${north}`)
+})
+
+test('the round trip through world XZ survives a rectangular domain', () => {
+  const t = createSceneTransform(rectangular(40075, 18798))
+  for (const [x, y] of [
+    [0, 0],
+    [12000, -4000],
+    [-20037, 9399],
+  ] as const) {
+    const w = t.toWorldXZ(x, y)
+    const back = t.fromWorldXZ(w.x, w.z)
+    assert.ok(Math.abs(back.x - x) < 1e-6, `${back.x} vs ${x}`)
+    assert.ok(Math.abs(back.y - y) < 1e-6, `${back.y} vs ${y}`)
+  }
+})
+
+test('normals stay unit length and upright on a rectangular domain', () => {
+  const t = createSceneTransform(rectangular(40075, 18798))
+  const n = t.normalFromGradient({ x: 0.001, y: 0.002 })
+  assert.ok(Math.abs(Math.hypot(n.x, n.y, n.z) - 1) < 1e-9)
+  assert.ok(n.y > 0, 'a heightfield normal always has a positive Y')
 })

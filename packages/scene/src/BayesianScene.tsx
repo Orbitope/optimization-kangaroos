@@ -209,7 +209,7 @@ export function BayesianScene({
 
       {/* Same solved framing as the search scene — see `FitCamera`. */}
       <FitCamera
-        halfExtents={[1, transform.verticalScale / 2, 1]}
+        halfExtents={[transform.halfExtentX, transform.verticalScale / 2, transform.halfExtentZ]}
         centre={[0, transform.verticalScale / 2, 0]}
       />
     </>
