@@ -1,30 +1,17 @@
-import {
-  SURFACES_BY_NAME,
-  createSampledSurface,
-  createTrueSurface,
-  geneticAlgorithm,
-  gradientAscent,
-  hillClimber,
-  hopDuration,
-  runMultistart,
-  simulatedAnnealing,
-  type OptimizerFactory,
-  type Surface,
-  type Vec2,
-} from '@kangaroos/core'
+import { hopDuration, runMultistart } from '@kangaroos/core'
 import { SearchScene, useMultiRunView } from '@kangaroos/scene'
 import { Canvas } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import {
+  makeFactory,
+  resolveSurface,
+  type AlgorithmName,
+} from '../lib/algorithms.js'
 import { useDemSurface } from '../lib/dem.js'
 import { NearViewport } from './Figure.js'
 
-export type AlgorithmName =
-  | 'hill-climber'
-  | 'gradient-ascent'
-  | 'gradient-ascent-raw'
-  | 'annealing'
-  | 'genetic'
+export type { AlgorithmName }
 
 export interface SearchFigureProps {
   /** A benchmark surface name, or `data:<count>` / `truth` for Act 4. */
@@ -91,55 +78,6 @@ export interface SearchFigureProps {
   caption?: string
   /** Loop the run rather than stopping on the last frame. */
   loop?: boolean
-}
-
-function resolveSurface(spec: string, dataSeed: number): Surface {
-  if (spec === 'truth') return createTrueSurface()
-  if (spec.startsWith('data:')) {
-    return createSampledSurface({ count: Number(spec.slice(5)) || 20, seed: dataSeed })
-  }
-  return SURFACES_BY_NAME[spec] ?? SURFACES_BY_NAME.Himmelblau!
-}
-
-/**
- * The algorithm as a factory, so one run and many runs are configured
- * identically.
- *
- * This is what keeps a multistart figure honest: every kangaroo runs the same
- * algorithm with the same options and differs only in its seed, which is what
- * makes the spread of outcomes attributable to where she landed rather than to
- * how she was tuned.
- */
-function makeFactory(
-  name: AlgorithmName,
-  opts: { rate?: number; stepDecay?: number; start?: Vec2; maxSteps?: number },
-): OptimizerFactory {
-  const start = opts.start
-  const steps = opts.maxSteps
-  switch (name) {
-    case 'gradient-ascent':
-      return (s, rng) =>
-        gradientAscent(s, rng, { stepDecay: opts.stepDecay ?? 0.99, maxSteps: steps ?? 220, start })
-    case 'gradient-ascent-raw':
-      // The learning-rate figure: hop length tracks slope, as backprop's does.
-      return (s, rng) =>
-        gradientAscent(s, rng, {
-          normalize: false,
-          stepSize: opts.rate ?? 0.01,
-          stepDecay: opts.stepDecay ?? 1,
-          maxSteps: steps ?? 220,
-          start,
-        })
-    case 'annealing':
-      return (s, rng) =>
-        simulatedAnnealing(s, rng, { recordProposals: true, maxSteps: steps ?? 700, start })
-    case 'genetic':
-      return (s, rng) =>
-        geneticAlgorithm(s, rng, { maxSteps: steps ?? 70, populationSize: 24, start })
-    default:
-      return (s, rng) =>
-        hillClimber(s, rng, { recordProposals: true, maxSteps: steps ?? 220, start })
-  }
 }
 
 /**

@@ -1,0 +1,274 @@
+/*
+ * The tool page.
+ *
+ * Loaded after `article.css`, which supplies the tokens, the faces and the
+ * background layers. What this adds is the only structural difference between
+ * the two: the article is a scrolling column, and the tool is a fixed frame
+ * with its own scrolling parts.
+ */
+
+.tool-body {
+  /* No page scroll. The controls scroll; the stage never does, because a 3D
+     canvas that scrolls out from under a slider you are dragging is unusable. */
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.pg {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  height: 100dvh;
+}
+
+/* ── controls ───────────────────────────────────────────────────────────── */
+
+.pg-controls {
+  overflow-y: auto;
+  padding: var(--ck-space-6) var(--ck-space-5) var(--ck-space-8);
+  border-right: 1px solid var(--ck-border);
+  background: var(--ck-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-5);
+}
+
+.pg-title {
+  font-family: var(--ck-font-display);
+  font-weight: 600;
+  font-size: var(--ck-text-xl);
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--ck-text-bright);
+  margin: 0;
+}
+
+.pg-sub {
+  margin: calc(-1 * var(--ck-space-3)) 0 0;
+  font-size: var(--ck-text-xs);
+  line-height: 1.6;
+  color: var(--ck-text-muted);
+}
+
+.pg-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-2);
+}
+
+.pg-label {
+  font-size: var(--ck-text-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ck-text-secondary);
+}
+/* The current value, which is the half of a slider that can be read back. */
+.pg-label b {
+  color: var(--ck-amber-bright);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.pg-blurb {
+  margin: 0;
+  font-size: var(--ck-text-xs);
+  line-height: 1.55;
+  color: var(--ck-text-muted);
+}
+
+.pg-controls select {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.5rem;
+  color: var(--ck-text-primary);
+  background: var(--ck-raised);
+  border: 1px solid var(--ck-border);
+  border-radius: 6px;
+}
+
+/*
+ * Range inputs, styled explicitly.
+ *
+ * The default control is drawn by the platform in the platform's accent
+ * colour, which on this page is a blue slider on a warm dark panel and is the
+ * single most obviously foreign thing on it.
+ */
+.pg input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  margin: 0.5rem 0;
+  background: var(--ck-border);
+  border-radius: 1px;
+  cursor: pointer;
+}
+.pg input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ck-amber);
+  border: none;
+  cursor: pointer;
+}
+.pg input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ck-amber);
+  border: none;
+  cursor: pointer;
+}
+.pg input[type='range']:focus-visible {
+  outline: 2px solid var(--ck-amber-bright);
+  outline-offset: 4px;
+}
+
+.pg-toggles {
+  border: 1px solid var(--ck-border);
+  border-radius: 6px;
+  padding: var(--ck-space-3) var(--ck-space-4) var(--ck-space-4);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-2);
+}
+.pg-toggles legend {
+  font-size: var(--ck-text-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ck-text-secondary);
+  padding: 0 var(--ck-space-2);
+}
+.pg-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--ck-space-3);
+  font-size: 0.85rem;
+  color: var(--ck-text-primary);
+  cursor: pointer;
+}
+.pg-toggle input {
+  accent-color: var(--ck-amber);
+  width: 15px;
+  height: 15px;
+}
+
+/* ── stage ──────────────────────────────────────────────────────────────── */
+
+.pg-stage {
+  display: grid;
+  /* The scene takes what is left after the transport and the chart, both of
+     which are fixed height — so the canvas grows with the window rather than
+     the chart doing it, which is the right way round. */
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  min-width: 0;
+}
+
+.pg-scene {
+  min-height: 0;
+  position: relative;
+}
+.pg-scene canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pg-transport {
+  display: flex;
+  align-items: center;
+  gap: var(--ck-space-4);
+  padding: var(--ck-space-3) var(--ck-space-5);
+  border-top: 1px solid var(--ck-border);
+  border-bottom: 1px solid var(--ck-border);
+  background: var(--ck-surface);
+  font-size: 0.82rem;
+}
+.pg-transport input[type='range'] {
+  flex: 1;
+}
+.pg-transport button {
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.9rem;
+  color: var(--ck-text-secondary);
+  background: var(--ck-raised);
+  border: 1px solid var(--ck-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.pg-transport button:hover {
+  color: var(--ck-text-bright);
+  background: var(--ck-border);
+}
+.pg-play {
+  /* The only primary action on the page. */
+  min-width: 5.5rem;
+  color: var(--ck-void) !important;
+  background: var(--ck-amber) !important;
+  font-weight: 600;
+}
+.pg-readout {
+  color: var(--ck-text-muted);
+  /* Tabular-ish: the step counter changes every frame and a proportional
+     figure width would make the whole row jitter. It is already a monospace,
+     so this only has to stop the row reflowing as the digit count grows. */
+  min-width: 9rem;
+  text-align: right;
+}
+.pg-speed {
+  display: flex;
+  align-items: center;
+  gap: var(--ck-space-2);
+  color: var(--ck-text-muted);
+}
+
+.pg-chart {
+  padding: var(--ck-space-4) var(--ck-space-5) var(--ck-space-5);
+  background: var(--ck-void);
+}
+/* The chart is already inside a panel here, so it does not want the article's
+   card treatment on top of the page's own. */
+.pg-chart .ck-chart {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+/* ── narrow ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 860px) {
+  .tool-body,
+  .pg {
+    height: auto;
+    overflow: visible;
+  }
+  .pg {
+    grid-template-columns: 1fr;
+  }
+  /* Scene first. Stacked in source order the whole control panel comes before
+     the kangaroo, so a phone opens on a wall of sliders for a thing it has not
+     shown yet. */
+  .pg-stage {
+    order: 1;
+  }
+  .pg-controls {
+    order: 2;
+    border-right: 0;
+    border-top: 1px solid var(--ck-border);
+    overflow-y: visible;
+  }
+  /* Explicit, because the auto row of a non-fixed grid collapses a canvas that
+     sizes itself from its parent. */
+  .pg-scene {
+    height: 60vh;
+  }
+  .pg-transport {
+    flex-wrap: wrap;
+  }
+}

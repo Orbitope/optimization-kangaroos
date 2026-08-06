@@ -5,6 +5,7 @@ import {
   createSceneTransform,
   hopAt,
   stampCoverage,
+  type HopOptions,
   type OptimizerState,
   type SceneTransform,
   type Coverage,
@@ -221,6 +222,17 @@ export interface SearchSceneProps {
   wireframe?: boolean
   orbit?: boolean
   /**
+   * Arc shape for every hop in the scene.
+   *
+   * The default apex is proportional to hop distance and uncapped, which is
+   * correct for a local search — a step twice as long should launch twice as
+   * high, or a runaway learning rate stops looking runaway. It is wrong for a
+   * method whose every step crosses the map: Bayesian optimization at four
+   * runs draws forty arcs that tower over the terrain they annotate and
+   * overflow the frame, carrying no information for the height they cost.
+   */
+  hop?: HopOptions
+  /**
    * Where to view from. The distance is not authorable — it is solved so the
    * world box fills whatever shape the canvas is. See `FitCamera`.
    */
@@ -231,6 +243,16 @@ export interface SearchSceneProps {
     readonly elevation?: number
     /** Fraction of the frame to fill. */
     readonly fill?: number
+    /**
+     * Extra height above the terrain to keep in frame, as a fraction of the
+     * vertical scale.
+     *
+     * The world box is the ground; hop arcs live above it and the framing
+     * knows nothing about them. A little is enough for ordinary searches. A
+     * method that crosses the map every step needs a lot, because its arcs
+     * are as tall as the hops are long.
+     */
+    readonly headroom?: number
   }
 }
 
@@ -260,6 +282,7 @@ export function SearchScene({
   generationTrail = 7,
   showTerrain = true,
   camera,
+  hop,
 }: SearchSceneProps) {
   const { states, transform, path, agentPaths, runStates, restHeadings } = view
   const cursor = hopAt(path.length, frame, framesPerStep)
@@ -395,7 +418,9 @@ export function SearchScene({
 
       {showGradients && <GradientField surface={surface} transform={transform} />}
 
-      {showTrail && !agentPaths && <HopTrail points={path} reveal={reveal} width={trailWidth} />}
+      {showTrail && !agentPaths && (
+        <HopTrail points={path} reveal={reveal} width={trailWidth} hop={hop} />
+      )}
       {showTrail &&
         !generations &&
         agentPaths?.map((p, i) => (
@@ -407,6 +432,7 @@ export function SearchScene({
             samplesPerHop={distinct ? 12 : 8}
             width={trailWidth * (distinct ? 0.8 : 0.55)}
             opacity={distinct ? 0.85 : 0.45}
+            hop={hop}
           />
         ))}
 
@@ -432,9 +458,9 @@ export function SearchScene({
       {generations ? (
         <KangarooGenerations generations={generations} />
       ) : crowdHops ? (
-        <KangarooCrowd hops={crowdHops} t={cursor.t} colors={crowdColors} />
+        <KangarooCrowd hops={crowdHops} t={cursor.t} colors={crowdColors} hop={hop} />
       ) : (
-        <Kangaroo from={from} to={to} t={cursor.t} />
+        <Kangaroo from={from} to={to} t={cursor.t} hop={hop} />
       )}
 
       {orbit && (
@@ -450,12 +476,14 @@ export function SearchScene({
 
       {/*
         After the controls, so it finds them on its first pass and can agree
-        with them about the target. The world box is the scene transform's own:
-        x and z are normalized to ±1 and the terrain occupies 0..verticalScale.
+        with them about the target. The world box is the scene transform's own
+        — x and z normalized to ±1, terrain from 0 to verticalScale — plus
+        headroom for the arcs, which are drawn above the ground and are not
+        part of any surface's extent.
       */}
       <FitCamera
-        halfExtents={[1, transform.verticalScale / 2, 1]}
-        centre={[0, transform.verticalScale / 2, 0]}
+        halfExtents={[1, (transform.verticalScale * (1 + (camera?.headroom ?? 0.2))) / 2, 1]}
+        centre={[0, (transform.verticalScale * (1 + (camera?.headroom ?? 0.2))) / 2, 0]}
         azimuth={camera?.azimuth}
         elevation={camera?.elevation}
         fill={camera?.fill}
