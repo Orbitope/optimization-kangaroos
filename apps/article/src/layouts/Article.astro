@@ -6,6 +6,22 @@ const { title, description } = Astro.props
 <!doctype html>
 <html lang="en">
   <head>
+    <!--
+      Orbitope GA4. In the layout rather than in the built index.html, because
+      Astro generates that file and anything written into it is destroyed by the
+      next `npm run build` — and `dist/` is gitignored, so the edit would not
+      even survive a clone. Here it is emitted into every page the site ever
+      grows, which is what "each index.html" means for a generated site.
+    -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KG3409EZDQ"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || []
+      function gtag() {
+        dataLayer.push(arguments)
+      }
+      gtag('js', new Date())
+      gtag('config', 'G-KG3409EZDQ')
+    </script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
