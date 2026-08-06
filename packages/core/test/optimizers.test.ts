@@ -325,3 +325,84 @@ test('collect() refuses to spin forever', () => {
     /more than 50 states/,
   )
 })
+
+// ── crossover and diversity ────────────────────────────────────────────────
+
+/** Mean pairwise distance — the plainest measure of how spread out a population is. */
+function populationSpread(pop: readonly { position: { x: number; y: number } }[]): number {
+  let sum = 0
+  let n = 0
+  for (let a = 0; a < pop.length; a++) {
+    for (let b = a + 1; b < pop.length; b++) {
+      sum += Math.hypot(
+        pop[a]!.position.x - pop[b]!.position.x,
+        pop[a]!.position.y - pop[b]!.position.y,
+      )
+      n++
+    }
+  }
+  return n === 0 ? 0 : sum / n
+}
+
+test('a blended child may land outside its parents', () => {
+  // The property that distinguishes BLX-alpha from plain interpolation, tested
+  // directly at the mechanism.
+  //
+  // Testing it through population spread instead was the first attempt and it
+  // was a bad test: on Schwefel the default mutation is 42 domain units, which
+  // holds diversity open on its own and hides the crossover entirely, so the
+  // measurement said 71 against 75 and proved nothing. Whether the effect shows
+  // up in spread depends on the surface. Whether offspring can overshoot does
+  // not.
+  const surface = schwefel
+  const states = collect(
+    geneticAlgorithm(surface, mulberry32(3), {
+      maxSteps: 12,
+      populationSize: 20,
+      mutationScale: 1e-9, // so any spread must come from crossover, not noise
+      blendAlpha: 0.5,
+    }),
+  )
+
+  // With mutation switched off, strict interpolation makes the bounding box
+  // monotonically non-increasing. Overshoot means it can widen.
+  const width = (i: number) => {
+    const xs = states[i]!.population!.map((p) => p.position.x)
+    return Math.max(...xs) - Math.min(...xs)
+  }
+  let widened = false
+  for (let i = 2; i < states.length; i++) if (width(i) > width(i - 1) + 1e-9) widened = true
+  assert.ok(widened, 'the population never widened — offspring are still trapped between parents')
+})
+
+test('the genetic algorithm still converges, it just takes longer to commit', () => {
+  // Holding diversity open is only an improvement if it still ends somewhere.
+  const surface = schwefel
+  const states = collect(
+    geneticAlgorithm(surface, mulberry32(1), { maxSteps: 80, populationSize: 24 }),
+  )
+  const early = populationSpread(states[4]!.population!)
+  const late = populationSpread(states[states.length - 1]!.population!)
+  assert.ok(late < early, `population should still contract: ${late.toFixed(1)} vs ${early.toFixed(1)}`)
+})
+
+test('better crossover finds better answers, averaged over seeds', () => {
+  // The claim that justifies changing a default. Averaged, because a single
+  // seed of either can get lucky.
+  const surface = eggholder
+  const mean = (blendAlpha: number) => {
+    let total = 0
+    for (let seed = 0; seed < 20; seed++) {
+      const states = collect(
+        geneticAlgorithm(surface, mulberry32(seed), {
+          maxSteps: 70,
+          populationSize: 24,
+          blendAlpha,
+        }),
+      )
+      total += states[states.length - 1]!.best.value
+    }
+    return total / 20
+  }
+  assert.ok(mean(0.5) > mean(0), `BLX ${mean(0.5).toFixed(0)} should beat strict ${mean(0).toFixed(0)}`)
+})

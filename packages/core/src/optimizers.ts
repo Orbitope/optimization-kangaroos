@@ -425,6 +425,23 @@ export interface GeneticAlgorithmOptions extends BaseOptions {
   readonly mutationScale?: number
   /** Chance that a child is a blend of two parents rather than a clone. */
   readonly crossoverRate?: number
+  /**
+   * How far outside the parents a blended child may land, as a fraction of the
+   * gap between them. This is the alpha of BLX-alpha.
+   *
+   * Zero is strict interpolation — every child lands *between* its parents —
+   * and it is a diversity sink. The population's bounding box can then only
+   * ever shrink, so under any selection pressure at all it contracts
+   * geometrically onto its own centroid and the search collapses into one
+   * basin long before it has finished looking. That is premature convergence,
+   * and it is a real failure mode rather than an implementation detail: it was
+   * what this code did, and on a four-summit landscape it went from four
+   * occupied basins to one by generation ten.
+   *
+   * 0.5 is the value the literature settled on. It lets offspring overshoot,
+   * which is what keeps a population able to widen as well as narrow.
+   */
+  readonly blendAlpha?: number
   /** Carry the single best individual through unchanged. */
   readonly elitism?: boolean
 }
@@ -448,6 +465,7 @@ export function* geneticAlgorithm(
   const survivalRate = Math.min(1, Math.max(1 / size, opts.survivalRate ?? 0.4))
   const mutationScale = opts.mutationScale ?? domainDiagonal(surface.domain) * 0.03
   const crossoverRate = opts.crossoverRate ?? 0.7
+  const blendAlpha = opts.blendAlpha ?? 0.5
   const elitism = opts.elitism ?? true
 
   let population: Individual[] = Array.from({ length: size }, () =>
@@ -486,10 +504,17 @@ export function* geneticAlgorithm(
 
       if (survivors.length > 1 && rng.next() < crossoverRate) {
         const b = survivors[randInt(rng, survivors.length)]!
-        // Blend crossover: the child lands somewhere on the line between its
-        // parents. Discrete per-axis swapping would restrict offspring to the
-        // lattice its parents already occupy.
-        const t = rng.next()
+        // BLX-alpha. The child lands on the line through its parents, but may
+        // fall beyond either of them by `blendAlpha` times their separation.
+        // Restricting it to the segment between them — which is what this did
+        // originally — means the population's extent can only shrink, and it
+        // collapses onto its centroid within a few generations.
+        //
+        // Discrete per-axis swapping is the other classic choice and is worse
+        // here: it confines offspring to the lattice their parents already
+        // occupy, so a population that has lost a coordinate can never recover
+        // it.
+        const t = -blendAlpha + rng.next() * (1 + 2 * blendAlpha)
         childPos = {
           x: a.position.x + (b.position.x - a.position.x) * t,
           y: a.position.y + (b.position.y - a.position.y) * t,
