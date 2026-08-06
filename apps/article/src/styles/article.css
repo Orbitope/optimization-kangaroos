@@ -1,4 +1,5 @@
 @import '@contentkit/tokens/tokens.css';
+@import './fonts.css';
 
 /* ── page ───────────────────────────────────────────────────────────────── */
 
@@ -25,6 +26,52 @@ body {
   font-size: var(--ck-text-base);
   line-height: 1.75;
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * The Orbitope background is not a flat fill.
+ *
+ * orbitope.github.io lays two fixed layers over --void and every page on the
+ * site inherits them: a 48px dot grid in steel-bright at 13%, and a radial
+ * vignette that leaves the middle alone and pulls the corners down by 55%.
+ * Matching --void alone got the colour right and the surface wrong, which is
+ * why the page read as almost-but-not-Orbitope.
+ *
+ * Both are `fixed`, as on the site, so the content glides over a stationary
+ * field rather than dragging a texture along with it. That is a real choice at
+ * essay length, where the alternative — a grid tall enough to scroll — is both
+ * a much larger paint and a different look: paper rather than screen.
+ *
+ * `pointer-events: none` matters more here than on a landing page, because a
+ * full-bleed fixed layer sits directly over the 3D figures' drag targets.
+ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--ck-steel-bright) 13%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 48px 48px;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 120% at 50% 45%, rgb(0 0 0 / 0) 40%, rgb(0 0 0 / 0.55) 100%);
+}
+
+/* Content rides above both layers — the site does this with `.stage`. */
+main {
+  position: relative;
+  z-index: 1;
 }
 
 /* Prose is a readable measure; figures break out wider. */
@@ -121,6 +168,24 @@ pre code { color: inherit; }
   line-height: 1.65;
   letter-spacing: 0.02em;
   color: var(--ck-text-muted);
+}
+
+/*
+ * Canvas figures get the site's card treatment — surface, border, radius —
+ * which they did not need while the page was a flat fill and do now: a chart
+ * drawn straight onto the page has the dot grid running underneath its plot
+ * area, through the gridlines and behind the marks.
+ *
+ * There is a second reason, and it is the stronger one. The chartSeries scale
+ * was generated and validated against surface #1E1C16. Drawing it on void
+ * instead moves every contrast ratio the validator checked. The plate puts the
+ * marks back on the background they were measured against.
+ */
+.ck-chart {
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-lg);
+  padding: var(--ck-space-4);
 }
 
 .ck-chart-title {
