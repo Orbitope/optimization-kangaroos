@@ -14,6 +14,7 @@ import {
 import { OrbitControls } from '@react-three/drei'
 import { useMemo, useRef } from 'react'
 
+import { FitCamera } from './FitCamera.js'
 import { GradientField } from './GradientField.js'
 import { statesToWorld } from './geometry.js'
 import { HopTrail, RejectedProbes } from './HopTrail.js'
@@ -219,6 +220,18 @@ export interface SearchSceneProps {
   showTerrain?: boolean
   wireframe?: boolean
   orbit?: boolean
+  /**
+   * Where to view from. The distance is not authorable — it is solved so the
+   * world box fills whatever shape the canvas is. See `FitCamera`.
+   */
+  camera?: {
+    /** Compass bearing in degrees, clockwise from +Z. */
+    readonly azimuth?: number
+    /** Degrees above the horizon. */
+    readonly elevation?: number
+    /** Fraction of the frame to fill. */
+    readonly fill?: number
+  }
 }
 
 /**
@@ -246,6 +259,7 @@ export function SearchScene({
   populationStyle = 'hop',
   generationTrail = 7,
   showTerrain = true,
+  camera,
 }: SearchSceneProps) {
   const { states, transform, path, agentPaths, runStates, restHeadings } = view
   const cursor = hopAt(path.length, frame, framesPerStep)
@@ -430,9 +444,22 @@ export function SearchScene({
           minDistance={1.4}
           maxDistance={5}
           maxPolarAngle={Math.PI * 0.49}
-          target={[0, 0.1, 0]}
+          target={[0, transform.verticalScale / 2, 0]}
         />
       )}
+
+      {/*
+        After the controls, so it finds them on its first pass and can agree
+        with them about the target. The world box is the scene transform's own:
+        x and z are normalized to ±1 and the terrain occupies 0..verticalScale.
+      */}
+      <FitCamera
+        halfExtents={[1, transform.verticalScale / 2, 1]}
+        centre={[0, transform.verticalScale / 2, 0]}
+        azimuth={camera?.azimuth}
+        elevation={camera?.elevation}
+        fill={camera?.fill}
+      />
     </>
   )
 }

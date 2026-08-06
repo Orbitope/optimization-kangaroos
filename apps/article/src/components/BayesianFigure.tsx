@@ -136,7 +136,8 @@ function BayesianFigureBody(props: {
 
   return (
     <div className="scene-shell" style={{ height: props.height }}>
-      <Canvas shadows dpr={[1, 2]} camera={{ position: [1.9, 1.5, 1.9], fov: 42 }}>
+      {/* No camera position — `FitCamera` in the scene solves for one. */}
+      <Canvas shadows dpr={[1, 2]} camera={{ fov: 42 }}>
         <BayesianScene
           surface={surface}
           view={view}

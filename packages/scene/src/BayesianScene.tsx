@@ -13,6 +13,7 @@ import { OrbitControls } from '@react-three/drei'
 import { useMemo } from 'react'
 
 import { BeliefTerrain, Cairns, NextTarget } from './BeliefTerrain.js'
+import { FitCamera } from './FitCamera.js'
 import { statesToWorld } from './geometry.js'
 import { HopTrail } from './HopTrail.js'
 import { Kangaroo } from './Kangaroo.js'
@@ -202,9 +203,15 @@ export function BayesianScene({
           minDistance={1.4}
           maxDistance={5}
           maxPolarAngle={Math.PI * 0.49}
-          target={[0, 0.1, 0]}
+          target={[0, transform.verticalScale / 2, 0]}
         />
       )}
+
+      {/* Same solved framing as the search scene — see `FitCamera`. */}
+      <FitCamera
+        halfExtents={[1, transform.verticalScale / 2, 1]}
+        centre={[0, transform.verticalScale / 2, 0]}
+      />
     </>
   )
 }

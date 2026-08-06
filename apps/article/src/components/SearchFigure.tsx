@@ -82,6 +82,11 @@ export interface SearchFigureProps {
    * is supposed to be contrasted against.
    */
   trailWidth?: number
+  /**
+   * Where to view the landscape from. Only the direction — the distance is
+   * solved so the terrain fills the plate at whatever size it is drawn.
+   */
+  camera?: { readonly azimuth?: number; readonly elevation?: number; readonly fill?: number }
   caption?: string
   /** Loop the run rather than stopping on the last frame. */
   loop?: boolean
@@ -164,6 +169,7 @@ export function SearchFigure({
   fogMode = 'trail',
   populationStyle,
   trailWidth,
+  camera,
   caption,
   loop = true,
 }: SearchFigureProps) {
@@ -191,6 +197,7 @@ export function SearchFigure({
           fogMode={fogMode}
           populationStyle={populationStyle}
           trailWidth={trailWidth}
+          camera={camera}
           loop={loop}
         />
       </NearViewport>
@@ -220,6 +227,7 @@ function SearchFigureBody(props: {
   fogMode: 'trail' | 'window'
   populationStyle?: 'hop' | 'generations'
   trailWidth?: number
+  camera?: { readonly azimuth?: number; readonly elevation?: number; readonly fill?: number }
   loop: boolean
 }) {
   const surface = useMemo(
@@ -285,7 +293,12 @@ function SearchFigureBody(props: {
 
   return (
     <div className="scene-shell" style={{ height: props.height }}>
-      <Canvas shadows dpr={[1, 2]} camera={{ position: [1.9, 1.5, 1.9], fov: 42 }}>
+      {/*
+        No camera position. `FitCamera` inside the scene solves for one from
+        the canvas aspect, so the terrain fills the plate at every width
+        instead of sitting small in the middle of a 2.3:1 letterbox.
+      */}
+      <Canvas shadows dpr={[1, 2]} camera={{ fov: 42 }}>
         <SearchScene
           surface={surface}
           view={view}
@@ -297,6 +310,7 @@ function SearchFigureBody(props: {
           ramp={props.ramp}
           populationStyle={props.populationStyle}
           trailWidth={props.trailWidth}
+          camera={props.camera}
           fog={
             props.fog
               ? {
