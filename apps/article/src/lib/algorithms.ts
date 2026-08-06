@@ -95,6 +95,7 @@ export const SURFACE_OPTIONS: readonly { value: string; label: string; group: st
   { value: 'data:20', label: '20 examples', group: 'Built from data' },
   { value: 'data:200', label: '200 examples', group: 'Built from data' },
   { value: 'truth', label: 'The true landscape', group: 'Built from data' },
+  { value: 'dem:world', label: 'The whole Earth', group: 'Real terrain' },
   { value: 'dem:everest', label: 'Everest', group: 'Real terrain' },
   { value: 'dem:k2', label: 'K2', group: 'Real terrain' },
   { value: 'dem:himalaya', label: 'The Himalaya', group: 'Real terrain' },

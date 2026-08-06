@@ -10,6 +10,7 @@ import { BayesianFigure } from '../components/BayesianFigure.tsx'
 import { AcquisitionFigure } from '../components/AcquisitionFigure.tsx'
 import { SightFigure } from '../components/SightFigure.tsx'
 import { BowlingBallFigure } from '../components/BowlingBallFigure.tsx'
+import { WorldOutcomeFigure } from '../components/WorldOutcomeFigure.tsx'
 
 <div class="prose masthead">
 
@@ -484,6 +485,130 @@ genetic algorithms, since their faster rate of reproduction more than
 compensates for their shorter hops.
 <cite>Sarle</cite>
 </blockquote>
+
+### Put her on the actual Earth
+
+Every landscape so far has been invented. They are good landscapes — they were
+designed by people who wanted to know whether a search method works, and they
+are hard in the specific ways real problems are hard — but nobody has ever
+stood on one.
+
+So here is the planet. The same elevation data as the Everest close-up at the
+top of this page, all of it, at seventy-eight kilometres to the sample. Sarle's
+Everest and his K2 are both on it. So is Chapel Hill.
+
+Drop sixty kangaroos at random, give each one two thousand two hundred hops,
+and let them work.
+
+<div class="wide">
+<WorldOutcomeFigure
+  client:visible
+  panels={[
+    { label: 'the blind hill climber', algorithm: 'hill-climber' },
+    { label: 'simulated annealing', cooling: 0.9999 },
+  ]}
+  caption="Sixty runs of each, from the same sixty random starting points. Every ring is where one kangaroo finished; every cross is one who finished below sea level."
+/>
+</div>
+
+Fourteen of the sixty hill climbers drown.
+
+That is not a figure of speech and it is not a tuning problem. Two thirds of
+this planet is ocean, so a quarter of the random drops land in one — and on an
+abyssal plain there is no uphill to find. She feels around, everything nearby
+is the same depth or deeper, and she stops. No step size fixes that. Nothing
+from act two fixes that. The method's entire strategy is *go up from here*, and
+there is no up.
+
+The annealed kangaroo, from the identical sixty starting points and the same
+number of hops, averages five thousand three hundred metres and every single
+one of them ends on high ground. The difference between the two panels is one
+rule: **be willing to go downhill at first.** She can leave the ocean because
+she is drunk enough not to care that leaving makes things worse.
+
+### The sobering-up schedule is the whole game
+
+Annealing has a dial, and until now it has been set for you. It governs how
+fast she sobers up. Here is what it does.
+
+<div class="wide">
+<WorldOutcomeFigure
+  client:visible
+  panels={[
+    { label: 'cooling 0.9', cooling: 0.9 },
+    { label: 'cooling 0.99', cooling: 0.99 },
+    { label: 'cooling 0.999', cooling: 0.999 },
+    { label: 'cooling 0.9999', cooling: 0.9999 },
+  ]}
+  caption="The same sixty kangaroos and the same budget in every panel. Only the rate she sobers up changes — 0.9 means she is sober within a few dozen hops, 0.9999 means she is still wandering near the end."
+/>
+</div>
+
+Read it as a collapse. Sober up fast and the sixty runs finish on **twenty-one
+separate highlands** — Greenland, the Rockies, the Andes, the Ethiopian
+highlands, the Alps, a scatter across Antarctica. Every one of them is a
+perfectly real mountain. None of them is the highest.
+
+Sober up slowly and they finish on **three**, and fifty-odd of the sixty are on
+the same one.
+
+This is the clearest thing in the article, and it is worth saying plainly:
+**the schedule does not decide how well she does. It decides which mountain she
+ends up on.** A kangaroo who freezes early is not searching badly — she is
+searching a smaller world, one that happens to contain whatever she was
+standing near when she stopped being willing to leave.
+
+Notice what she settles for at 0.9 and 0.99, too. The single most common
+outcome is the Antarctic plateau: a vast, easy, high place that is nowhere near
+the highest. Broad and easy beats narrow and tall, every time, for a searcher
+who has stopped wandering.
+
+### How far, not just how willing
+
+There is a second dial, and this is the one the metaphor keeps eliding.
+Temperature governs how willing she is to go *downhill*. It says nothing about
+how *far* she jumps. Those are different things and they fail differently.
+
+Over two hundred runs of three thousand hops on this planet:
+
+| how far she hops | ends near the top | ends *at* the top |
+|---|---|---|
+| 2% of the map | 104 / 200 | 33 / 200 |
+| 30% of the map | **144 / 200** | **0 / 200** |
+| 30%, shrinking to 0.07% | 104 / 200 | **50 / 200** |
+
+Big hops find the right continent and can never resolve a summit. Small hops
+resolve a summit and can never cross an ocean. Neither is wrong; they are
+answers to different questions, and the run only asks one of them at a time.
+
+Which is Sarle's tired kangaroo, arriving where it was needed all along:
+
+<blockquote>
+If the kangaroo gets tired and makes smaller and smaller hops, she will
+eventually make it to the top of the nearest mountain.
+<cite>Sarle</cite>
+</blockquote>
+
+Start with the hops of a kangaroo who has no idea where she is, and end with
+the hops of one who thinks she is nearly there. That beats every fixed setting
+at actually standing on the summit.
+
+And it can be overdone, in exactly the way act two warned. Shrink too fast and
+she is crawling before she has finished looking — thirty per cent decaying to
+nothing scores worse than not decaying at all. Getting tired is a strategy.
+Getting tired too early is just stopping.
+
+<div class="prose">
+
+One honest note about all of this. At seventy-eight kilometres to the sample,
+Everest is not a mountain — it is one pixel on a very large plateau, and the
+highest point in this data reads six thousand and eighty-eight metres, at
+28.1°N 87.0°E. Which is the same thing the opening said about 8,749 against
+8,849, one zoom level further out. The kangaroo is not climbing Everest. She is
+climbing what Everest looks like from far enough away, and so is every machine
+learning model that has ever been trained on a sample of anything.
+
+</div>
 
 </div>
 

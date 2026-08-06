@@ -20,6 +20,17 @@ import { encodeDemRaster } from '../packages/core/dist/dem.js'
 import { metresPerPixel, sampleRegion } from './dem/tiles.mjs'
 
 const OUT = new URL('../apps/article/public/terrain/', import.meta.url).pathname
+
+/**
+ * Output grid, per region. 256 is 128 KB and is four times finer than
+ * anything the 192x192 terrain mesh can show, which is right for a region a
+ * few tens of kilometres across.
+ *
+ * The world is the exception and gets 512. Not for the render — the mesh
+ * cannot use it either — but for the *search*: the whole point of that figure
+ * is whether a kangaroo lands on the highest ground on Earth, and how sharp
+ * that needle is depends entirely on how finely the planet is sampled.
+ */
 const SIZE = 256
 
 /**
@@ -110,6 +121,28 @@ const REGIONS = [
     expect: { label: 'Kosciuszko', metres: 2228, tolerance: 250 },
   },
   {
+    /*
+     * The whole planet, equirectangular. Web Mercator cannot represent beyond
+     * about 85 degrees, which costs the last few degrees around each pole —
+     * the South Pole itself is outside the data. Most of the East Antarctic
+     * plateau is inside it, which is what matters here, because at fast
+     * cooling that plateau is the single most common place a search stops.
+     */
+    name: 'world',
+    title: 'Earth',
+    bounds: { west: -180, east: 180, south: -85, north: 85 },
+    zoom: 4,
+    size: 512,
+    /*
+     * 6100 m, and not Everest. At 78 km per sample the Himalaya is a handful
+     * of pixels and its 8849 m summit averages down to about six kilometres —
+     * which is the same lesson as the Everest close-up, one more zoom level
+     * out, and the reason the highest sample sits in the Karakoram rather than
+     * on any named peak.
+     */
+    expect: { label: 'the highest ground on Earth', metres: 6100, tolerance: 400 },
+  },
+  {
     name: 'indian-ocean',
     title: 'The Indian Ocean',
     /*
@@ -149,7 +182,8 @@ for (const region of todo) {
   const centreLat = (bounds.north + bounds.south) / 2
   process.stdout.write(`${name.padEnd(14)} z${zoom} `)
 
-  const heights = await sampleRegion(bounds, zoom, SIZE, (done, total) => {
+  const size = region.size ?? SIZE
+  const heights = await sampleRegion(bounds, zoom, size, (done, total) => {
     process.stdout.write(`\r${name.padEnd(14)} z${zoom} tiles ${done}/${total}   `)
   })
 
@@ -161,16 +195,16 @@ for (const region of todo) {
   }
 
   const file = join(OUT, `${name}.dem`)
-  writeFileSync(file, Buffer.from(encodeDemRaster({ width: SIZE, height: SIZE, bounds, heights })))
+  writeFileSync(file, Buffer.from(encodeDemRaster({ width: size, height: size, bounds, heights })))
 
   const gsd = metresPerPixel(centreLat, zoom)
   const spanKm = ((bounds.east - bounds.west) * 111.32 * Math.cos((centreLat * Math.PI) / 180)) / 1
-  const outputGsd = (spanKm * 1000) / SIZE
+  const outputGsd = (spanKm * 1000) / size
 
   // Verified at bake time, not only in a test: a region whose numbers are
   // wrong should never reach the repository in the first place.
   const observed = region.expect.at
-    ? sampleAt(heights, SIZE, bounds, region.expect.at)
+    ? sampleAt(heights, size, bounds, region.expect.at)
     : region.expect.mode === 'min'
       ? min
       : max
@@ -187,7 +221,7 @@ for (const region of todo) {
   }
 
   process.stdout.write(
-    `\r${name.padEnd(14)} z${zoom}  ${SIZE}×${SIZE}  ` +
+    `\r${name.padEnd(14)} z${zoom}  ${size}×${size}  ` +
       `${spanKm.toFixed(0)} km span, ${outputGsd.toFixed(0)} m/sample ` +
       `(source ${gsd.toFixed(0)} m/px)  ` +
       `${min.toFixed(0)}..${max.toFixed(0)} m  ` +
@@ -202,7 +236,7 @@ for (const region of todo) {
     title: region.title,
     file: `${name}.dem`,
     bounds,
-    size: SIZE,
+    size,
     zoom,
     minHeight: Math.round(min),
     maxHeight: Math.round(max),

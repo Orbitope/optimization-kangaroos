@@ -94,5 +94,21 @@
     "minHeight": 3993,
     "maxHeight": 8558,
     "metresPerSample": 78
+  },
+  {
+    "name": "world",
+    "title": "Earth",
+    "file": "world.dem",
+    "bounds": {
+      "west": -180,
+      "east": 180,
+      "south": -85,
+      "north": 85
+    },
+    "size": 512,
+    "zoom": 4,
+    "minHeight": -9375,
+    "maxHeight": 6088,
+    "metresPerSample": 78272
   }
 ]

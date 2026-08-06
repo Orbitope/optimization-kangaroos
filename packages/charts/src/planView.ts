@@ -47,6 +47,11 @@ export interface PlanRasterOptions {
 /**
  * Rasterise a surface to an ImageData, ready to blit.
  *
+ * `size` is the *longer* side; the shorter one follows the domain's aspect
+ * ratio, so a rectangular region comes out rectangular. Every analytic surface
+ * here is square, which is why this took until a whole-Earth region — 40,000 km
+ * by 18,800 km — to matter. The 3D transform had the same bug.
+ *
  * Expensive enough to be worth memoising per surface — a 300x300 plate is 90k
  * height evaluations — and completely static once built, so an animated figure
  * builds it once and then only draws marks.
@@ -62,17 +67,23 @@ export function rasteriseSurface(
   }
 
   const d = surface.domain
-  const heights = new Float64Array(size * size)
+  const spanX = d.xMax - d.xMin
+  const spanY = d.yMax - d.yMin
+  const longest = Math.max(spanX, spanY)
+  const width = spanX >= spanY ? size : Math.max(2, Math.round((size * spanX) / longest))
+  const height = spanY >= spanX ? size : Math.max(2, Math.round((size * spanY) / longest))
+
+  const heights = new Float64Array(width * height)
   let min = Infinity
   let max = -Infinity
 
-  for (let j = 0; j < size; j++) {
+  for (let j = 0; j < height; j++) {
     // Image rows run top to bottom; domain y runs bottom to top, so north is up.
-    const y = d.yMax - ((d.yMax - d.yMin) * j) / (size - 1)
-    for (let i = 0; i < size; i++) {
-      const x = d.xMin + ((d.xMax - d.xMin) * i) / (size - 1)
+    const y = d.yMax - (spanY * j) / (height - 1)
+    for (let i = 0; i < width; i++) {
+      const x = d.xMin + (spanX * i) / (width - 1)
       const h = surface.height(x, y)
-      heights[j * size + i] = Number.isFinite(h) ? h : 0
+      heights[j * width + i] = Number.isFinite(h) ? h : 0
       if (h < min) min = h
       if (h > max) max = h
     }
@@ -87,8 +98,8 @@ export function rasteriseSurface(
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)] as const
   })
 
-  const image = createImageData(size, size)
-  for (let k = 0; k < size * size; k++) {
+  const image = createImageData(width, height)
+  for (let k = 0; k < width * height; k++) {
     const t = Math.min(1, Math.max(0, (heights[k]! - floor) / (max - floor || 1)))
     const [r, g, b] = lut[Math.min(255, Math.round(t * 255))]!
     image.data[k * 4] = r
@@ -97,21 +108,30 @@ export function rasteriseSurface(
     image.data[k * 4 + 3] = 255
   }
 
-  return { width: size, height: size, image, heights, min, max, floor }
+  return { width, height, image, heights, min, max, floor }
 }
 
 export interface Viewport {
   readonly x: number
   readonly y: number
-  readonly size: number
+  /**
+   * On-screen size of the plate. A square plate can give one number; a region
+   * that is not square has to give both or the marks drift off the terrain
+   * they are meant to be standing on.
+   */
+  readonly size?: number
+  readonly width?: number
+  readonly height?: number
 }
 
 /** Domain point to pixel, with north up. */
 export function toPlanPixel(surface: Surface, p: Vec2, view: Viewport): { x: number; y: number } {
   const d = surface.domain
+  const w = view.width ?? view.size ?? 0
+  const h = view.height ?? view.size ?? 0
   return {
-    x: view.x + ((p.x - d.xMin) / (d.xMax - d.xMin)) * view.size,
-    y: view.y + (1 - (p.y - d.yMin) / (d.yMax - d.yMin)) * view.size,
+    x: view.x + ((p.x - d.xMin) / (d.xMax - d.xMin)) * w,
+    y: view.y + (1 - (p.y - d.yMin) / (d.yMax - d.yMin)) * h,
   }
 }
 
