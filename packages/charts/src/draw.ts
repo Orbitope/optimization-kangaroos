@@ -25,8 +25,20 @@ export interface AxisOptions {
   readonly font?: string
 }
 
-const TICK_FONT = '11px "IBM Plex Mono", ui-monospace, monospace'
-const LABEL_FONT = '11px "IBM Plex Sans", system-ui, sans-serif'
+/**
+ * Canvas font stacks.
+ *
+ * `ctx.font` takes a CSS shorthand string and cannot resolve custom properties,
+ * so the family has to be a literal here even though it lives in a token
+ * everywhere else. Exported so the article's own canvas figures use the same
+ * one — the first version had it written out at nine call sites and they were
+ * still IBM Plex long after the page had moved to the house faces.
+ */
+export const CANVAS_MONO = '"JetBrains Mono", ui-monospace, monospace'
+export const CANVAS_DISPLAY = '"Rajdhani", "Oswald", sans-serif'
+
+const TICK_FONT = `11px ${CANVAS_MONO}`
+const LABEL_FONT = `11px ${CANVAS_MONO}`
 
 export function clear(ctx: CanvasRenderingContext2D, plot: Plot): void {
   ctx.clearRect(0, 0, plot.width, plot.height)

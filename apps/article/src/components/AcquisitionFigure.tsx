@@ -9,6 +9,8 @@ import {
   type Vec2,
 } from '@kangaroos/core'
 import {
+  CANVAS_DISPLAY,
+  CANVAS_MONO,
   ChartFrame,
   linearScale,
   rasteriseSurface,
@@ -257,7 +259,7 @@ function drawComparison(
   ctx.textBaseline = 'alphabetic'
 
   // ── legend ───────────────────────────────────────────────────────────────
-  ctx.font = '11.5px "IBM Plex Sans", system-ui, sans-serif'
+  ctx.font = `11.5px ${CANVAS_DISPLAY}`
   ctx.fillStyle = CKColor.textMuted
   ctx.textAlign = 'left'
   let lx = 2
@@ -365,14 +367,14 @@ function drawComparison(
 
     // ── caption ────────────────────────────────────────────────────────────
     ctx.textAlign = 'left'
-    ctx.font = '600 13px "IBM Plex Sans", system-ui, sans-serif'
+    ctx.font = `600 13px ${CANVAS_DISPLAY}`
     ctx.fillStyle = colour
     ctx.fillText(labels[i] ?? `κ = ${run.kappa}`, ox, oy + panel + 17)
 
     const distinct = new Set(
       visible.map((o) => `${o.position.x.toFixed(1)},${o.position.y.toFixed(1)}`),
     ).size
-    ctx.font = '11.5px "IBM Plex Mono", ui-monospace, monospace'
+    ctx.font = `11.5px ${CANVAS_MONO}`
     ctx.fillStyle = CKColor.textSecondary
     ctx.fillText(`best ${bestNow.value.toFixed(1)}`, ox, oy + panel + 33)
     ctx.fillStyle = CKColor.textMuted
@@ -398,11 +400,11 @@ function drawComparison(
   const x = linearScale({ min: 0, max: steps }, { min: cx, max: cx + cw })
 
   ctx.textAlign = 'left'
-  ctx.font = '600 12.5px "IBM Plex Sans", system-ui, sans-serif'
+  ctx.font = `600 12.5px ${CANVAS_DISPLAY}`
   ctx.fillStyle = CKColor.textBright
   ctx.fillText('Best altitude found so far', 0, cy - 10)
 
-  ctx.font = '10.5px "IBM Plex Mono", ui-monospace, monospace'
+  ctx.font = `10.5px ${CANVAS_MONO}`
   for (let g = 0; g <= 3; g++) {
     const v = lo - padY + ((hi - lo + padY * 2) * g) / 3
     const py = Math.round(y(v)) + 0.5
@@ -435,19 +437,19 @@ function drawComparison(
 
     // Direct labels riding the line end, so there is no legend to cross-refer.
     const last = upto[upto.length - 1]!
-    ctx.font = '600 11px "IBM Plex Sans", system-ui, sans-serif'
+    ctx.font = `600 11px ${CANVAS_DISPLAY}`
     ctx.fillStyle = chartSeries(i)
     ctx.textAlign = 'left'
     ctx.fillText(`κ=${run.kappa}`, x(upto.length - 1) + 6, y(last.best.value) + 3.5)
   })
 
-  ctx.font = '10.5px "IBM Plex Mono", ui-monospace, monospace'
+  ctx.font = `10.5px ${CANVAS_MONO}`
   ctx.fillStyle = CKColor.textMuted
   ctx.textAlign = 'center'
   for (const k of [0, steps / 4, steps / 2, (steps * 3) / 4, steps]) {
     ctx.fillText(String(Math.round(k)), x(k), cy + ch + 16)
   }
-  ctx.font = '11.5px "IBM Plex Sans", system-ui, sans-serif'
+  ctx.font = `11.5px ${CANVAS_DISPLAY}`
   ctx.fillStyle = CKColor.textSecondary
   ctx.fillText('evaluations', cx + cw / 2, cy + ch + 30)
 

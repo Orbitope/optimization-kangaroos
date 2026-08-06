@@ -4,18 +4,33 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+/*
+ * The house faces, from orbitope.github.io: JetBrains Mono as the base, and
+ * Rajdhani reserved for display. The site sets `html, body` to the mono face
+ * and the article follows it.
+ *
+ * Mono at essay length needs two adjustments the landing page never had to
+ * make, because its longest run of text is a one-line project description.
+ * A monospace advance is roughly 0.6em against a proportional face's 0.5em, so
+ * the same nominal size reads larger and the same measure holds fewer
+ * characters — hence a notch down from `lg` to `base`, and a measure set in
+ * `ch` so it tracks the face rather than a pixel count guessed for a different
+ * one.
+ */
 body {
   margin: 0;
   background: var(--ck-void);
   color: var(--ck-text-primary);
   font-family: var(--ck-font-body);
-  font-size: var(--ck-text-lg);
-  line-height: var(--ck-leading-relaxed);
+  font-size: var(--ck-text-base);
+  line-height: 1.75;
   -webkit-font-smoothing: antialiased;
 }
 
 /* Prose is a readable measure; figures break out wider. */
-.prose { max-width: 34rem; margin: 0 auto; padding: 0 var(--ck-space-5); }
+/* 68ch, not a rem width: the comfortable measure is a character count, and
+   it only stays comfortable across faces if it is expressed as one. */
+.prose { max-width: 68ch; margin: 0 auto; padding: 0 var(--ck-space-5); }
 
 /*
  * Figures live inside the prose column in the MDX, so they need to escape it.
@@ -30,11 +45,19 @@ body {
   transform: translateX(-50%);
 }
 
+/*
+ * Rajdhani is condensed and squared off, so it wants the opposite treatment to
+ * the serif it replaced: a positive tracking rather than a negative one, and
+ * more weight to hold up at display sizes. The site runs its wordmark at 600
+ * with 0.005em and project names at 600 with 0.01em.
+ */
 h1, h2, h3 {
   font-family: var(--ck-font-display);
   color: var(--ck-text-bright);
-  line-height: var(--ck-leading-tight);
-  letter-spacing: var(--ck-tracking-tight);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
 }
 h1 { font-size: var(--ck-text-4xl); margin: 0 0 var(--ck-space-4); }
 h2 { font-size: var(--ck-text-2xl); margin: var(--ck-space-9) 0 var(--ck-space-4); }
@@ -94,8 +117,9 @@ pre code { color: inherit; }
 .scene-shell canvas { display: block; touch-action: pan-y; }
 .figure-caption {
   margin-top: var(--ck-space-3);
-  font-size: var(--ck-text-sm);
-  line-height: var(--ck-leading-snug);
+  font-size: var(--ck-text-xs);
+  line-height: 1.65;
+  letter-spacing: 0.02em;
   color: var(--ck-text-muted);
 }
 
@@ -124,12 +148,18 @@ pre code { color: inherit; }
 .kicker {
   font-family: var(--ck-font-mono);
   font-size: var(--ck-text-xs);
-  letter-spacing: var(--ck-tracking-caps);
+  font-weight: 500;
+  /* 0.26em, the tracking the site puts on its tagline and section heads. */
+  letter-spacing: 0.26em;
   text-transform: uppercase;
   color: var(--ck-amber);
   margin-bottom: var(--ck-space-4);
 }
-.standfirst { font-size: var(--ck-text-xl); color: var(--ck-text-secondary); }
+.standfirst {
+  font-size: var(--ck-text-lg);
+  line-height: 1.6;
+  color: var(--ck-text-secondary);
+}
 
 .colophon {
   margin-top: var(--ck-space-10);

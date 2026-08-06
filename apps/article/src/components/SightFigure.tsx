@@ -18,7 +18,7 @@ import {
   type Vec2,
   type Surface,
 } from '@kangaroos/core'
-import { ChartFrame, applyFog, rasteriseSurface, toPlanPixel, type PlanRaster } from '@kangaroos/charts'
+import { CANVAS_DISPLAY, CANVAS_MONO, ChartFrame, applyFog, rasteriseSurface, toPlanPixel, type PlanRaster } from '@kangaroos/charts'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { NearViewport } from './Figure.js'
@@ -485,7 +485,7 @@ function drawSight(
 
   // The readout is the whole argument in one number: a search that looks busy
   // can have touched almost none of the world.
-  ctx.font = '12.5px "IBM Plex Mono", ui-monospace, monospace'
+  ctx.font = `12.5px ${CANVAS_MONO}`
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
   ctx.fillStyle = CKColor.textSecondary

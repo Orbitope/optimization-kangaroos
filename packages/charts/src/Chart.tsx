@@ -1,6 +1,7 @@
 import { CKColor } from '@contentkit/tokens'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
+import { CANVAS_MONO } from './draw.js'
 import { layout, type Margin, type Plot } from './scale.js'
 
 export interface ChartFrameProps {
@@ -147,7 +148,7 @@ export function ChartTooltip({
         border: `1px solid ${CKColor.border}`,
         borderRadius: 4,
         padding: '6px 8px',
-        font: '11px "IBM Plex Mono", ui-monospace, monospace',
+        font: `11px ${CANVAS_MONO}`,
         color: CKColor.textPrimary,
         whiteSpace: 'nowrap',
         zIndex: 2,
