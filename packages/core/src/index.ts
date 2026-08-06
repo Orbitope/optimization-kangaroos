@@ -5,6 +5,7 @@
  * widget, the 3D view, and the video renderer all consume exactly this.
  */
 
+export * from './dem.js'
 export * from './surface.js'
 export * from './functions.js'
 export * from './rng.js'

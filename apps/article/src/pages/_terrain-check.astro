@@ -1,0 +1,21 @@
+---
+/**
+ * Every baked region at once. Kept unbuilt — drop the leading underscore to
+ * look at it, the way `_camera-options.astro` works.
+ *
+ * The point is to catch a region that decodes without erroring but is wrong:
+ * flipped north to south, sheared by a bad projection, or exaggerated into a
+ * field of spikes. None of those throw, and all three have happened.
+ */
+import Article from '../layouts/Article.astro'
+import { SearchFigure } from '../components/SearchFigure.tsx'
+const REGIONS = ['everest', 'k2', 'himalaya', 'chapel-hill', 'australia', 'indian-ocean']
+---
+<Article title="Terrain check" description="DEM regions">
+  <div class="prose"><h1>Baked regions</h1></div>
+  {REGIONS.map((r) => (
+    <div class="wide">
+      <SearchFigure client:visible surface={`dem:${r}`} algorithm="hill-climber" seed={3} maxSteps={140} trailWidth={2} caption={r} />
+    </div>
+  ))}
+</Article>

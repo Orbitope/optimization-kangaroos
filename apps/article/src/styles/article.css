@@ -162,6 +162,17 @@ pre code { color: inherit; }
   overflow: hidden;
 }
 .scene-shell canvas { display: block; touch-action: pan-y; }
+/* Real terrain is a 128 KB fetch, so the plate says so rather than sitting
+   empty and looking like a figure that failed to load. */
+.scene-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ck-text-xs);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ck-text-muted);
+}
 .figure-caption {
   margin-top: var(--ck-space-3);
   font-size: var(--ck-text-xs);

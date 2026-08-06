@@ -16,6 +16,7 @@ import { SearchScene, useMultiRunView } from '@kangaroos/scene'
 import { Canvas } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { useDemSurface } from '../lib/dem.js'
 import { NearViewport } from './Figure.js'
 
 export type AlgorithmName =
@@ -230,10 +231,22 @@ function SearchFigureBody(props: {
   camera?: { readonly azimuth?: number; readonly elevation?: number; readonly fill?: number }
   loop: boolean
 }) {
-  const surface = useMemo(
-    () => resolveSurface(props.surfaceName, props.dataSeed),
-    [props.surfaceName, props.dataSeed],
+  // Real terrain arrives over the network, so it cannot come from the
+  // synchronous resolver. The hook is called unconditionally with null for
+  // analytic surfaces, which is the rule about hooks, not a style choice.
+  const demRegion = props.surfaceName.startsWith('dem:') ? props.surfaceName.slice(4) : null
+  const dem = useDemSurface(demRegion)
+
+  // A stand-in while a region is in flight, so every hook below runs against a
+  // real surface and none of them needs a null branch. It is never drawn — the
+  // shell renders a placeholder until `dem` arrives.
+  const analytic = useMemo(
+    () => resolveSurface(demRegion ? 'Himmelblau' : props.surfaceName, props.dataSeed),
+    [demRegion, props.surfaceName, props.dataSeed],
   )
+  const surface = dem?.surface ?? analytic
+  const pending = demRegion !== null && dem === null
+
   const runs = useMemo(() => {
     const factory = makeFactory(props.algorithm, {
       rate: props.rate,
@@ -264,7 +277,7 @@ function SearchFigureBody(props: {
     props.maxSteps,
   ])
 
-  const view = useMultiRunView(surface, runs)
+  const view = useMultiRunView(surface, runs, { verticalScale: dem?.verticalScale })
 
   // The longest run owns the clock — ending the animation when the *first*
   // kangaroo settles would cut away from everyone still climbing.
@@ -290,6 +303,14 @@ function SearchFigureBody(props: {
     raf.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf.current)
   }, [total, props.loop])
+
+  if (pending) {
+    return (
+      <div className="scene-shell scene-loading" style={{ height: props.height }}>
+        <span>Loading terrain…</span>
+      </div>
+    )
+  }
 
   return (
     <div className="scene-shell" style={{ height: props.height }}>
