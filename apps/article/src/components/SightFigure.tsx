@@ -15,6 +15,7 @@ import {
   stampCoverage,
   type Coverage,
   type OptimizerState,
+  type Vec2,
   type Surface,
 } from '@kangaroos/core'
 import { ChartFrame, applyFog, rasteriseSurface, toPlanPixel, type PlanRaster } from '@kangaroos/charts'
@@ -57,6 +58,15 @@ export interface SightFigureProps {
    * accumulates coverage across all of them.
    */
   runs?: number
+  /**
+   * Fixed starting point, in domain coordinates. Single-run figures only.
+   *
+   * Same reason the 3D figures needed it: where a random seed happens to drop
+   * her decides whether the figure shows anything, and for a figure about *how*
+   * she moves that is left to chance for no benefit.
+   */
+  startX?: number
+  startY?: number
   /** Sight radius as a fraction of the domain's shorter side. */
   sight?: number
   /** Evaluations per second of playback. */
@@ -85,18 +95,24 @@ function resolveSurface(spec: string): Surface {
   return SURFACES_BY_NAME[spec] ?? SURFACES_BY_NAME.Himmelblau!
 }
 
-function runOf(name: SightAlgorithm, surface: Surface, seed: number, steps: number): OptimizerState[] {
+function runOf(
+  name: SightAlgorithm,
+  surface: Surface,
+  seed: number,
+  steps: number,
+  start?: Vec2,
+): OptimizerState[] {
   const rng = mulberry32(seed)
   switch (name) {
     case 'gradient-ascent':
-      return collect(gradientAscent(surface, rng, { stepDecay: 0.99, maxSteps: steps }))
+      return collect(gradientAscent(surface, rng, { stepDecay: 0.99, maxSteps: steps, start }))
     case 'annealing':
-      return collect(simulatedAnnealing(surface, rng, { maxSteps: steps }))
+      return collect(simulatedAnnealing(surface, rng, { maxSteps: steps, start }))
     case 'genetic':
-      return collect(geneticAlgorithm(surface, rng, { maxSteps: steps, populationSize: 24 }))
+      return collect(geneticAlgorithm(surface, rng, { maxSteps: steps, populationSize: 24, start }))
     case 'bayesian':
       return collect(
-        bayesianOptimization(surface, rng, { maxSteps: steps, recordModel: false }),
+        bayesianOptimization(surface, rng, { maxSteps: steps, recordModel: false, start }),
       ) as OptimizerState[]
     default:
       // Patience raised so she does not declare victory and stop. A hill
@@ -106,7 +122,7 @@ function runOf(name: SightAlgorithm, surface: Surface, seed: number, steps: numb
       // her spending most of her effort near the top discovering that
       // everything around her is lower — which only happens if she keeps
       // trying.
-      return collect(hillClimber(surface, rng, { maxSteps: steps, patience: steps }))
+      return collect(hillClimber(surface, rng, { maxSteps: steps, patience: steps, start }))
   }
 }
 
@@ -127,6 +143,8 @@ export function SightFigure({
   algorithm = 'hill-climber',
   seed = 7,
   runs = 1,
+  startX,
+  startY,
   steps = 220,
   sight = 0.09,
   rate = 14,
@@ -144,6 +162,8 @@ export function SightFigure({
           algorithm={algorithm}
           seed={seed}
           runs={runs}
+          startX={startX}
+          startY={startY}
           steps={steps}
           sight={sight}
           rate={rate}
@@ -166,6 +186,8 @@ function SightFigureBody(props: {
   algorithm: SightAlgorithm
   seed: number
   runs: number
+  startX?: number
+  startY?: number
   steps: number
   sight: number
   rate: number
@@ -183,9 +205,19 @@ function SightFigureBody(props: {
   const runs = useMemo(
     () =>
       Array.from({ length: Math.max(1, props.runs) }, (_, i) =>
-        runOf(props.algorithm, surface, props.seed + i, props.steps),
+        runOf(
+          props.algorithm,
+          surface,
+          props.seed + i,
+          props.steps,
+          // A pinned start belongs to a single run; several runs from one point
+          // would not be a multistart.
+          props.startX !== undefined && props.startY !== undefined && props.runs <= 1
+            ? { x: props.startX, y: props.startY }
+            : undefined,
+        ),
       ),
-    [props.algorithm, surface, props.seed, props.runs, props.steps],
+    [props.algorithm, surface, props.seed, props.runs, props.steps, props.startX, props.startY],
   )
   // The playhead runs on the longest, so it does not stop while somebody is
   // still climbing.

@@ -71,6 +71,7 @@ is what they picture instead.
   seed={3}
   startX={0.2}
   startY={-1.6}
+  trailWidth={2}
   showProbes
   caption="A kangaroo on a landscape. She cannot see it — the view is ours, not hers. Drag to orbit."
 />
@@ -111,8 +112,9 @@ up somewhere higher than it started.
   seed={7}
   startX={-0.6}
   startY={-1.2}
+  trailWidth={2}
   showProbes
-  caption="Faint lines are directions she tried and rejected — downhill, so she stayed put. The bright arc is a jump she kept."
+  caption="Blue spokes are directions she tried and rejected — downhill, so she stayed put — and they stay on the map so you can see them pile up. Coral is a jump she kept. Watch the blue thicken into a shaving brush as she nears the top."
 />
 </div>
 
@@ -227,16 +229,18 @@ Here is that, with everything she cannot see taken away.
 <div class="wide">
 <SightFigure
   client:visible
-  surface="Schwefel"
+  surface="Himmelblau"
   algorithm="gradient-ascent"
   seed={2}
+  startX={-0.4}
+  startY={-0.6}
   steps={140}
-  sight={0.07}
-  rate={11}
+  sight={0.08}
+  rate={9}
   mode="window"
   showGradient
   height={480}
-  caption="Gradient ascent with only the two trenches she actually dug. The cyan arrow is the answer the bowling ball gave her — the direction, at her feet, right now. Everything beyond the lit circle is a rumour. Switch to 'everywhere she has been' to see the trail of readings pile up, or turn the landscape on to see what she was walking through."
+  caption="Gradient ascent with only the two trenches she actually dug. The cyan arrow is the answer the bowling ball gave her — the direction, at her feet, right now. Everything beyond the lit circle is a rumour. Switch to 'everywhere she has been' to watch the readings pile up into a path, or turn the landscape on to see what she was walking through the whole time."
 />
 </div>
 

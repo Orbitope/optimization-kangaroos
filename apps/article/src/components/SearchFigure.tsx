@@ -74,6 +74,14 @@ export interface SearchFigureProps {
   fogMode?: 'trail' | 'window'
   /** `generations` for a population that stands still and fades by age. */
   populationStyle?: 'hop' | 'generations'
+  /**
+   * Trail stroke width in screen pixels.
+   *
+   * Worth turning down wherever the trail is not the subject. On the
+   * rejected-probe figure the default 3.5 is thick enough to bury the spokes it
+   * is supposed to be contrasted against.
+   */
+  trailWidth?: number
   caption?: string
   /** Loop the run rather than stopping on the last frame. */
   loop?: boolean
@@ -155,6 +163,7 @@ export function SearchFigure({
   fog,
   fogMode = 'trail',
   populationStyle,
+  trailWidth,
   caption,
   loop = true,
 }: SearchFigureProps) {
@@ -181,6 +190,7 @@ export function SearchFigure({
           fog={fog}
           fogMode={fogMode}
           populationStyle={populationStyle}
+          trailWidth={trailWidth}
           loop={loop}
         />
       </NearViewport>
@@ -209,6 +219,7 @@ function SearchFigureBody(props: {
   fog?: number
   fogMode: 'trail' | 'window'
   populationStyle?: 'hop' | 'generations'
+  trailWidth?: number
   loop: boolean
 }) {
   const surface = useMemo(
@@ -285,6 +296,7 @@ function SearchFigureBody(props: {
           contours={props.contours}
           ramp={props.ramp}
           populationStyle={props.populationStyle}
+          trailWidth={props.trailWidth}
           fog={
             props.fog
               ? {

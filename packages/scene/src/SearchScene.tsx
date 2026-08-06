@@ -334,13 +334,31 @@ export function SearchScene({
     return out
   }, [populationStyle, agentPaths, cursor.index, generationTrail])
 
+  /**
+   * Every rejected proposal of the whole run, with the index of the step that
+   * produced it, so the reveal can be a count rather than a rebuild.
+   *
+   * Built once. A 220-step hill climber rejects a few hundred directions, which
+   * is nothing to hold in memory and everything to rebuild per frame.
+   */
   const probes = useMemo(() => {
-    if (!showProbes) return []
-    const proposals = states[cursor.index + 1]?.proposals ?? []
-    return proposals
-      .filter((p) => !p.accepted)
-      .map((p) => transform.toWorld(p.position.x, p.position.y, p.value))
-  }, [showProbes, states, cursor.index, transform])
+    if (!showProbes) return { segments: [] as { from: Vec3; to: Vec3 }[], upTo: [] as number[] }
+    const segments: { from: Vec3; to: Vec3 }[] = []
+    const upTo: number[] = []
+    states.forEach((state, i) => {
+      const origin = path[Math.max(0, i - 1)] ?? path[0]
+      for (const p of state.proposals ?? []) {
+        if (p.accepted || !origin) continue
+        segments.push({ from: origin, to: transform.toWorld(p.position.x, p.position.y, p.value) })
+      }
+      upTo.push(segments.length)
+    })
+    return { segments, upTo }
+  }, [showProbes, states, path, transform])
+
+  const probesShown = probes.upTo[Math.min(cursor.index, probes.upTo.length - 1)] ?? 0
+  // The step she is on right now, drawn brighter on top of the record.
+  const probesLive = probes.upTo[Math.max(0, cursor.index - 1)] ?? 0
 
   return (
     <>
@@ -378,7 +396,24 @@ export function SearchScene({
           />
         ))}
 
-      {probes.length > 0 && <RejectedProbes from={from} probes={probes} t={cursor.t} />}
+      {/*
+        Two passes over the same geometry. The faint one is the record — every
+        direction tried and thrown away, all run long — and the bright one is
+        just this step's, so the reader can tell what is happening now from what
+        already happened without either disappearing.
+      */}
+      {probes.segments.length > 0 && (
+        <>
+          <RejectedProbes segments={probes.segments} count={probesShown} />
+          <RejectedProbes
+            segments={probes.segments.slice(probesLive, probesShown)}
+            count={probesShown - probesLive}
+            color={CKColor.textBright}
+            width={2.2}
+            opacity={0.85 * (1 - Math.min(1, cursor.t))}
+          />
+        </>
+      )}
 
       {generations ? (
         <KangarooGenerations generations={generations} />
