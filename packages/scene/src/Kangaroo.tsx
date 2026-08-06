@@ -1,4 +1,4 @@
-import { CKMarker, hexToInt } from '@contentkit/tokens'
+import { CKColor, CKMarker, hexToInt } from '@contentkit/tokens'
 import { hopPose, type HopOptions, type Vec3 } from '@kangaroos/core'
 import { useGLTF } from '@react-three/drei'
 import {
@@ -243,6 +243,106 @@ export function KangarooCrowd({
       key={hops.length}
     >
       <meshStandardMaterial color={hexToInt(color)} roughness={0.6} />
+    </instancedMesh>
+  )
+}
+
+export interface KangarooGenerationsProps {
+  /**
+   * One entry per generation shown, oldest first, each holding that
+   * generation's whole population in world space.
+   */
+  generations: readonly (readonly Vec3[])[]
+  size?: number
+  /** Oldest and newest colours; generations interpolate between them. */
+  from?: string
+  to?: string
+}
+
+/**
+ * A population drawn generation by generation, standing still.
+ *
+ * The hopping version was wrong about what a genetic algorithm does. Offspring
+ * are not their parents having jumped — they are new individuals, born
+ * somewhere else, and drawing an arc between generation five and generation six
+ * asserts a continuity that does not exist. There is no path to animate,
+ * because nothing travelled.
+ *
+ * So: no arcs. Each generation is a scatter of individuals standing where they
+ * were born, and several generations are on screen at once, colour-coded oldest
+ * to newest. The reading is then the right one — not "watch her climb" but
+ * "watch the cloud contract onto the high ground", which is the only thing a
+ * genetic algorithm actually does.
+ *
+ * One `InstancedMesh` for every generation at once. Fading older ones by both
+ * colour and scale rather than by opacity, because transparent instances need
+ * depth sorting the renderer will not do for them and the far half of the cloud
+ * would punch holes in the near half.
+ */
+export function KangarooGenerations({
+  generations,
+  size = 0.045,
+  // Not steelDark: it is near-black, and with no emissive term on an instanced
+  // material half the generations rendered as unlit specks against the terrain.
+  // Both ends of this ramp have to survive on their own.
+  from = '#4E9BC8',
+  to = CKMarker.fill,
+}: KangarooGenerationsProps) {
+  const mesh = useRef<THREE.InstancedMesh>(null)
+  const geometry = useKangarooGeometry()
+  const scratch = useMemo(() => new THREE.Object3D(), [])
+  const capacity = useMemo(
+    () => generations.reduce((n, g) => n + g.length, 0),
+    [generations],
+  )
+
+  useLayoutEffect(() => {
+    const m = mesh.current
+    if (!m) return
+    const colour = new THREE.Color()
+    const a = new THREE.Color(from)
+    const b = new THREE.Color(to)
+
+    let i = 0
+    generations.forEach((gen, g) => {
+      // Newest generation is full size and full colour; each older one is
+      // smaller and closer to the background.
+      const age = generations.length < 2 ? 1 : g / (generations.length - 1)
+      const scale = size * (0.55 + 0.45 * age)
+      // Linear rather than eased: the point is to read generation order off the
+      // colour, and squaring it crushes the older half into one hue.
+      colour.copy(a).lerp(b, age)
+
+      for (const p of gen) {
+        scratch.position.set(p.x, p.y, p.z)
+        scratch.rotation.set(0, 0, 0)
+        scratch.scale.setScalar(scale)
+        scratch.updateMatrix()
+        m.setMatrixAt(i, scratch.matrix)
+        m.setColorAt(i, colour)
+        i++
+      }
+    })
+
+    m.count = i
+    m.instanceMatrix.needsUpdate = true
+    if (m.instanceColor) m.instanceColor.needsUpdate = true
+    m.computeBoundingSphere()
+  })
+
+  return (
+    <instancedMesh ref={mesh} args={[geometry, undefined, Math.max(1, capacity)]} key={capacity} castShadow>
+      {/*
+        No `vertexColors`. Instanced colour arrives through `instanceColor`,
+        which three multiplies into the material colour on its own; asking for
+        vertex colours as well makes it look for a `color` attribute on the
+        geometry, find none on a mesh built from primitives, and fall through
+        to white — which is exactly what the first attempt rendered.
+
+        The material colour therefore has to stay white, or it would tint every
+        instance on top of the generation ramp.
+      */}
+      <meshStandardMaterial roughness={0.5} emissiveIntensity={0} />
     </instancedMesh>
   )
 }

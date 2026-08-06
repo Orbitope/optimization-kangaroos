@@ -17,7 +17,7 @@ import { useMemo, useRef } from 'react'
 import { GradientField } from './GradientField.js'
 import { statesToWorld } from './geometry.js'
 import { HopTrail, RejectedProbes } from './HopTrail.js'
-import { Kangaroo, KangarooCrowd } from './Kangaroo.js'
+import { Kangaroo, KangarooCrowd, KangarooGenerations } from './Kangaroo.js'
 import { SceneLighting, Terrain } from './Terrain.js'
 
 export interface RunView {
@@ -40,6 +40,15 @@ export interface RunView {
    * produced, which the scene does not need to know.
    */
   readonly agentPaths: readonly Vec3[][] | null
+  /**
+   * Every run's states, in domain coordinates.
+   *
+   * `agentPaths` is world space and there is no inverse transform, so anything
+   * that needs domain positions for *all* the runs has to get them here. Fog of
+   * war is exactly that: it stamps coverage in domain units, and reading only
+   * `states` meant three kangaroos on screen lit one patch between them.
+   */
+  readonly runStates: readonly (readonly OptimizerState[])[]
   /**
    * Resting heading per agent, in radians.
    *
@@ -112,6 +121,7 @@ export function useMultiRunView(
         transform,
         path: agentPaths[lead] ?? [],
         agentPaths,
+        runStates: runs,
         restHeadings: pathsToRestHeadings(agentPaths),
       }
     }
@@ -137,6 +147,9 @@ export function useMultiRunView(
       transform,
       path,
       agentPaths,
+      // A population is one run; its individuals are not separate searches, so
+      // the fog should follow the run and not the crowd.
+      runStates: [states],
       restHeadings: agentPaths ? pathsToRestHeadings(agentPaths) : null,
     }
   }, [runs, transform])
@@ -187,6 +200,21 @@ export interface SearchSceneProps {
     /** Grid resolution of the coverage buffer. */
     readonly resolution?: number
   }
+  /**
+   * How to render a population.
+   *
+   * `hop` animates every individual jumping from its previous generation's
+   * position, which is what the crowd renderer was built for and is wrong for a
+   * genetic algorithm: offspring are not their parents having jumped, so an arc
+   * between generation five and six asserts a continuity that does not exist.
+   *
+   * `generations` draws several generations at once, standing still, oldest
+   * dimmest. The reading changes from "watch her climb" to "watch the cloud
+   * contract onto high ground", which is the only thing a GA actually does.
+   */
+  populationStyle?: 'hop' | 'generations'
+  /** How many past generations stay on screen in `generations` mode. */
+  generationTrail?: number
   /** Draw the terrain surface. Off when ghost layers are the subject. */
   showTerrain?: boolean
   wireframe?: boolean
@@ -215,9 +243,11 @@ export function SearchScene({
   orbit = true,
   ramp,
   fog,
+  populationStyle = 'hop',
+  generationTrail = 7,
   showTerrain = true,
 }: SearchSceneProps) {
-  const { states, transform, path, agentPaths, restHeadings } = view
+  const { states, transform, path, agentPaths, runStates, restHeadings } = view
   const cursor = hopAt(path.length, frame, framesPerStep)
 
   const from = path[cursor.index] ?? { x: 0, y: 0, z: 0 }
@@ -266,23 +296,43 @@ export function SearchScene({
       coverage.current = createCoverage(fogResolution)
       stampedTo.current = -1
     }
-    const sources = states
     const mode = fog.mode ?? 'trail'
+    // Every run, not just the lead one. A finished run keeps contributing its
+    // last position, which is a no-op on already-lit ground.
+    const at = (run: readonly OptimizerState[], k: number) => run[Math.min(k, run.length - 1)]
+
     if (mode === 'window') {
       clearCoverage(coverage.current)
-      const s = sources[Math.min(cursor.index, sources.length - 1)]
-      if (s) stampCoverage(coverage.current, surface, s.position, { radius: fog.radius })
+      for (const run of runStates) {
+        const s = at(run, cursor.index)
+        if (s) stampCoverage(coverage.current, surface, s.position, { radius: fog.radius })
+      }
     } else {
       if (cursor.index < stampedTo.current) {
         clearCoverage(coverage.current)
         stampedTo.current = -1
       }
-      for (let k = stampedTo.current + 1; k <= cursor.index && k < sources.length; k++) {
-        stampCoverage(coverage.current, surface, sources[k]!.position, { radius: fog.radius })
+      const longest = runStates.reduce((n, r) => Math.max(n, r.length), 0)
+      for (let k = stampedTo.current + 1; k <= cursor.index && k < longest; k++) {
+        for (const run of runStates) {
+          const s = at(run, k)
+          if (s) stampCoverage(coverage.current, surface, s.position, { radius: fog.radius })
+        }
       }
       stampedTo.current = cursor.index
     }
   }
+
+  const generations = useMemo(() => {
+    if (populationStyle !== 'generations' || !agentPaths) return null
+    const newest = Math.min(cursor.index, (agentPaths[0]?.length ?? 1) - 1)
+    const oldest = Math.max(0, newest - generationTrail + 1)
+    const out: Vec3[][] = []
+    for (let g = oldest; g <= newest; g++) {
+      out.push(agentPaths.map((p) => p[Math.min(g, p.length - 1)]!).filter(Boolean))
+    }
+    return out
+  }, [populationStyle, agentPaths, cursor.index, generationTrail])
 
   const probes = useMemo(() => {
     if (!showProbes) return []
@@ -315,6 +365,7 @@ export function SearchScene({
 
       {showTrail && !agentPaths && <HopTrail points={path} reveal={reveal} width={trailWidth} />}
       {showTrail &&
+        !generations &&
         agentPaths?.map((p, i) => (
           <HopTrail
             key={i}
@@ -329,7 +380,9 @@ export function SearchScene({
 
       {probes.length > 0 && <RejectedProbes from={from} probes={probes} t={cursor.t} />}
 
-      {crowdHops ? (
+      {generations ? (
+        <KangarooGenerations generations={generations} />
+      ) : crowdHops ? (
         <KangarooCrowd hops={crowdHops} t={cursor.t} colors={crowdColors} />
       ) : (
         <Kangaroo from={from} to={to} t={cursor.t} />

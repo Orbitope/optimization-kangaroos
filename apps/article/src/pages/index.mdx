@@ -9,10 +9,11 @@ import { EnsembleFigure } from '../components/EnsembleFigure.tsx'
 import { BayesianFigure } from '../components/BayesianFigure.tsx'
 import { AcquisitionFigure } from '../components/AcquisitionFigure.tsx'
 import { SightFigure } from '../components/SightFigure.tsx'
+import { BowlingBallFigure } from '../components/BowlingBallFigure.tsx'
 
 <div class="prose masthead">
 
-<p class="kicker">Optimization, explained badly on purpose</p>
+<p class="kicker">Numerical optimization, with kangaroos</p>
 
 # Kangaroos and Training Neural Networks
 
@@ -68,6 +69,8 @@ is what they picture instead.
   surface="Himmelblau"
   algorithm="hill-climber"
   seed={3}
+  startX={0.2}
+  startY={-1.6}
   showProbes
   caption="A kangaroo on a landscape. She cannot see it — the view is ours, not hers. Drag to orbit."
 />
@@ -106,6 +109,8 @@ up somewhere higher than it started.
   surface="Himmelblau"
   algorithm="hill-climber"
   seed={7}
+  startX={-0.6}
+  startY={-1.2}
   showProbes
   caption="Faint lines are directions she tried and rejected — downhill, so she stayed put. The bright arc is a jump she kept."
 />
@@ -125,7 +130,7 @@ landscape this entire time. She has not.
   client:visible
   surface="Himmelblau"
   algorithm="hill-climber"
-  seed={7}
+  seed={5}
   runs={4}
   steps={120}
   caption="Four hill climbers, from their side. Each was dropped somewhere different and none of them knows about the others. The map is dark except where they have been. The first toggle switches between everywhere they have ever stood and the much smaller patch each can sense from where it is standing right now; the second puts the real landscape back for comparison."
@@ -160,9 +165,9 @@ walked.
   client:visible
   surface="Himmelblau"
   algorithm="hill-climber"
-  seed={7}
+  seed={22}
   runs={3}
-  fog={0.1}
+  fog={0.12}
   height={440}
   caption="Three hill climbers in relief, with the terrain drawn only where they have been. Drag to orbit — the parts of the landscape nobody has walked simply do not exist to look at."
 />
@@ -209,20 +214,13 @@ backpropagation world, bowling balls bio-degrade in zero time.
 </blockquote>
 
 <div class="wide">
-<SearchFigure
-  client:visible
-  surface="Schwefel"
-  algorithm="gradient-ascent"
-  seed={2}
-  showGradients
-  contours={12}
-  caption="Arrows show which way the ball would roll, everywhere at once. She only ever measures the one she is standing on."
+<BowlingBallFigure
+  caption="The whole of backpropagation, in three panels. Dig, roll, measure — twice, once along each axis — then multiply by the learning rate and jump. Nothing else happens."
 />
 </div>
 
-Every arrow in that figure is a pair of trenches she never dug. The whole field
-is visible to us and invisible to her; she gets one reading, at her own feet,
-and has to commit.
+Two trenches, two numbers, one multiplication. That is a gradient, and it is
+the entire mechanism the phrase "the network learns" is standing in front of.
 
 Here is that, with everything she cannot see taken away.
 
@@ -275,20 +273,25 @@ Three failures in one paragraph, and they pull in opposite directions.
   client:visible
   surface="Himmelblau"
   algorithm="gradient-ascent-raw"
-  rate={0.0006}
+  rate={0.0002}
+  startX={-0.4}
+  startY={-0.6}
   seed={4}
   height={360}
-  caption="Rate too low. Every jump is correct and almost nothing happens."
+  caption="Rate far too low. Two hundred and twenty jumps, every one of them in exactly the right direction, and she has moved about a twentieth of the way to the nearest summit."
 />
 
 <SearchFigure
   client:visible
   surface="Himmelblau"
   algorithm="gradient-ascent-raw"
-  rate={0.02}
+  rate={0.05}
+  startX={-0.4}
+  startY={-0.6}
+  maxSteps={40}
   seed={4}
   height={360}
-  caption="Rate too high. The first jump crosses half the map, and from there she is somewhere she never intended to be."
+  caption="Rate too high, from the same spot. She reaches steep ground, the slope multiplies into a jump the width of the map, and after that she is bouncing between corners. Forty hops shown; the direction was never wrong."
 />
 </div>
 
@@ -317,8 +320,10 @@ version of this, and call it a learning rate schedule.
   surface="Himmelblau"
   algorithm="gradient-ascent"
   stepDecay={0.985}
+  startX={-0.4}
+  startY={-0.6}
   seed={4}
-  caption="A decaying rate. Long strides while there is ground to cover, short ones once there is not."
+  caption="A decaying rate, from the same starting point as the two failures above. Long strides while there is ground to cover, shortening as she arrives, and she settles on the summit instead of skating across it."
 />
 </div>
 
@@ -356,17 +361,6 @@ climbing.
 
 Run it across thirty starts on a landscape that *does* have one true summit and
 the same thing shows up as a number.
-
-<div class="wide">
-<EnsembleFigure
-  client:visible
-  surface="Schwefel"
-  algorithms={['hill climber', 'gradient ascent']}
-  seeds={30}
-  chart="success"
-  caption="Thirty runs each on a landscape with one true summit and many decoys. Reaching the highest point is the exception."
-/>
-</div>
 
 So the rest of the thread is about kangaroos willing to do something that looks,
 locally, like a mistake.
@@ -420,14 +414,33 @@ repeat.
 <div class="wide">
 <SearchFigure
   client:visible
-  surface="Ackley"
+  surface="data:10"
   algorithm="genetic"
   seed={1}
-  framesPerStep={9}
-  contours={8}
-  caption="A population on a landscape that is almost flat except for one spike. A single kangaroo would wander it forever."
+  framesPerStep={14}
+  populationStyle="generations"
+  height={460}
+  caption="Ten generations at a time, on a landscape with four summits of different heights. Blue is the oldest generation on screen, coral the newest. Nobody hops: offspring are not their parents having jumped, they are new kangaroos born somewhere else. Watch the cloud thin out over the three lower summits and thicken over the tallest."
 />
 </div>
+
+Nothing in that figure climbs. Each generation is a scatter of individuals
+standing where they were born, and the only thing that happens is that the
+scatter gets denser in the good places and empties out of the bad ones. That
+is the whole mechanism — no kangaroo ever improved, the *population* did.
+
+<div class="wide">
+<EnsembleFigure
+  client:visible
+  surface="Schwefel"
+  algorithms={['hill climber', 'gradient ascent', 'annealing', 'genetic algorithm']}
+  seeds={30}
+  chart="success"
+  caption="Thirty runs of each, on a landscape with one true summit and a great many convincing decoys. The two methods from acts one and two never find it — not rarely, never. The two that are willing to go downhill find it about a third of the time."
+/>
+</div>
+
+A third is not a good number. It is an enormous improvement on zero.
 
 Sarle then undercuts his own animal:
 

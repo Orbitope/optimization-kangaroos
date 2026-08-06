@@ -162,6 +162,9 @@ pre code { color: inherit; }
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
+  /* Centred, because the square plot below is centred in a wider canvas.
+     Flush-left controls over a centred plate read as a layout accident. */
+  justify-content: center;
   margin-bottom: 0.75rem;
 }
 
@@ -210,4 +213,117 @@ pre code { color: inherit; }
 .figure-controls button:focus-visible {
   outline: 2px solid var(--ck-amber-bright);
   outline-offset: 2px;
+}
+
+/* ── the bowling-ball diagram ─────────────────────────────────────────────
+   The one drawn figure in the article. Everything else is generated from a
+   live optimizer; this explains a procedure with specific numbers from the
+   source, and a simulation would either reproduce them by construction or
+   contradict them. */
+
+.bowling-diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-base);
+}
+
+.bowling-diagram .panel-label {
+  fill: var(--ck-text-bright);
+  font: 600 14px var(--ck-font-body);
+}
+
+.bowling-diagram .ground {
+  fill: #2c4733; /* the cartographic ramp's lowland green, in section */
+  stroke: none;
+}
+
+.bowling-diagram .trench {
+  fill: none;
+  stroke: var(--ck-void);
+  stroke-width: 11;
+  stroke-linejoin: round;
+}
+
+/* Steel, then teflon. Drawn as a bright inner stroke so the trench reads as
+   lined rather than merely dug. */
+.bowling-diagram .trench-plate {
+  fill: none;
+  stroke: var(--ck-steel-bright);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  opacity: 0.85;
+}
+
+.bowling-diagram .ball {
+  fill: var(--ck-text-primary);
+  stroke: var(--ck-void);
+  stroke-width: 1.5;
+}
+
+.bowling-diagram .ball-hole {
+  fill: var(--ck-void);
+  opacity: 0.55;
+}
+
+.bowling-diagram .roll {
+  stroke: var(--ck-text-bright);
+  stroke-width: 2;
+}
+
+.bowling-diagram .tick {
+  stroke: var(--ck-text-muted);
+  stroke-width: 1.5;
+}
+
+.bowling-diagram .roll-label {
+  fill: var(--ck-text-bright);
+  font: 600 13px var(--ck-font-mono);
+}
+
+.bowling-diagram .axis-note {
+  fill: var(--ck-text-muted);
+  font: 12px var(--ck-font-body);
+}
+
+.bowling-diagram .sum {
+  font: 600 15px var(--ck-font-mono);
+}
+
+/* Two hues so a reader can follow one line of the arithmetic without losing
+   their place in the other — the whole panel is two parallel calculations. */
+.bowling-diagram .sum-north { fill: #35c4f0; }
+.bowling-diagram .sum-east { fill: #e8459e; }
+
+.bowling-diagram .sum-op {
+  fill: var(--ck-text-secondary);
+  font: 14px var(--ck-font-mono);
+}
+
+.bowling-diagram .plan-axis {
+  stroke: var(--ck-border);
+  stroke-width: 1.5;
+}
+
+.bowling-diagram .here {
+  fill: var(--ck-text-bright);
+}
+
+.bowling-diagram .jump {
+  stroke: var(--ck-coral);
+  stroke-width: 2.5;
+}
+
+.bowling-diagram .jump-label {
+  fill: var(--ck-coral-bright);
+  font: 600 12px var(--ck-font-mono);
+}
+
+.bowling-diagram .ball-ghost {
+  fill: none;
+  stroke: var(--ck-text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
 }
