@@ -20,6 +20,8 @@ interface Props {
   datePublished?: string
 }
 
+import engagement from '../engagement.js?raw'
+
 const { title, description, datePublished } = Astro.props
 
 const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`
@@ -64,3 +66,10 @@ const jsonLd = {
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
 <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+
+<!--
+  Engagement events. Shares its source with the hand-written articles over in
+  the orbitope.github.io repo (tools/engagement/engagement.js); kept in sync by
+  copying, because the two sites build in completely different ways.
+-->
+<script is:inline set:html={engagement} />
