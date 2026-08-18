@@ -10,7 +10,7 @@
     "build": "astro build",
     "preview": "astro preview --host 127.0.0.1",
     "typecheck": "astro check --minimumSeverity error",
-    "build:pages": "ARTICLE_BASE=${ARTICLE_BASE:-/optimization-kangaroos/} ARTICLE_SITE=${ARTICLE_SITE:-https://orbitope.github.io} astro build",
+    "build:pages": "ARTICLE_BASE=${ARTICLE_BASE:-/optimization-kangaroos/} ARTICLE_SITE=${ARTICLE_SITE:-https://orbitope.com} astro build",
     "prebuild:pages": "npm --prefix ../.. run build:libs",
     "preview:pages": "npm run build:pages && ARTICLE_BASE=${ARTICLE_BASE:-/optimization-kangaroos/} astro preview --host 127.0.0.1",
     "prebuild:docs": "npm --prefix ../.. run build:libs",

@@ -1,0 +1,66 @@
+---
+/**
+ * Everything inside <head> that is the same on every page: analytics, the
+ * social/canonical tag set, and the title/description pair.
+ *
+ * It exists because there are two pages — the article and the tool — and they
+ * had drifted: the tool grew its own hand-copied head, so any tag added to one
+ * silently missed the other. The GA4 tag has a documented history of going
+ * missing on these pages for exactly that reason, so it lives here too, where
+ * a new page gets it by construction rather than by remembering.
+ *
+ * Absolute URLs are derived from Astro.site + the page path rather than
+ * written by hand: social scrapers reject relative og:image values, and a
+ * hardcoded URL is the thing that survives a path change and points at a 404.
+ */
+interface Props {
+  title: string
+  description: string
+  /** Schema.org publication date, ISO. Only meaningful for type="article". */
+  datePublished?: string
+}
+
+const { title, description, datePublished } = Astro.props
+
+const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`
+const canonical = new URL(path, Astro.site).href
+// One card image for the whole site, at the article root — the tool is a
+// companion to the article, not a separately-shared thing.
+const ogImage = new URL('/optimization-kangaroos/og.png', Astro.site).href
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: title,
+  description,
+  image: ogImage,
+  url: canonical,
+  ...(datePublished ? { datePublished } : {}),
+  author: { '@type': 'Person', name: 'Matthew Burke' },
+  publisher: { '@type': 'Organization', name: 'Orbitope' },
+}
+---
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KG3409EZDQ"></script>
+<script is:inline>
+  window.dataLayer = window.dataLayer || []
+  function gtag() {
+    dataLayer.push(arguments)
+  }
+  gtag('js', new Date())
+  gtag('config', 'G-KG3409EZDQ')
+</script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:type" content="article" />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
